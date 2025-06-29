@@ -78,9 +78,22 @@
       <button onclick="addScoreRow()" class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition-colors">Add Round</button>
       <button onclick="toggleOldRounds(this)" class="px-4 py-2 bg-purple-500 text-white rounded-lg shadow-md hover:bg-purple-600 transition-colors">Hide Old Rounds</button>
       <button onclick="clearOnlyScores()" class="px-4 py-2 bg-orange-500 text-white rounded-lg shadow-md hover:bg-orange-600 transition-colors">Clear Scores</button>
+      <button onclick="endGame()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-colors">End Game & Declare Winner</button>
       <button onclick="clearScores()" class="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition-colors">Reset Game</button>
     </div>
   </div>
+
+  <div id="winnerModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md text-center transform transition-all scale-95 opacity-0" id="modalContent">
+      <h2 class="text-4xl font-bold mb-4">🎉 Game Over! 🎉</h2>
+      <div id="winnerList" class="space-y-4 text-left"></div>
+      <div class="mt-8 flex gap-4 justify-center">
+          <button onclick="closeModal()" class="px-6 py-2 bg-gray-500 text-white rounded-lg shadow-md hover:bg-gray-600 transition-transform hover:scale-105">Close</button>
+          <button onclick="clearScores()" class="px-6 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition-transform hover:scale-105">Play Again</button>
+      </div>
+    </div>
+  </div>
+
 
   <script>
     let playerNames = [];
@@ -89,7 +102,7 @@
 
     function setupPlayers() {
       const numPlayersInput = document.getElementById('numPlayers');
-      const numPlayers = numPlayersInput.value;
+      const numPlayers = parseInt(numPlayersInput.value); // Parse to integer
       if (numPlayers < 2 || numPlayers > 10) {
         alert("Please enter a number of players between 2 and 10.");
         return;
@@ -100,11 +113,12 @@
       document.getElementById('headerActions').classList.add('hidden'); // Hide buttons
 
       const nameFields = document.getElementById('nameFields');
-      nameFields.innerHTML = "";
+      nameFields.innerHTML = ""; // Clear any existing input fields
+
       for (let i = 0; i < numPlayers; i++) {
-        const existingName = playerNames[i] || "";
-        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-full max-w-xs rounded-lg dark:bg-gray-800" value="${existingName}" placeholder="Player ${i + 1} Name">`;
+        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-full max-w-xs rounded-lg dark:bg-gray-800" placeholder="Player ${i + 1} Name">`;
       }
+      document.getElementById('startGameBtn').innerText = 'Start Game'; // Ensure button text is "Start Game"
     }
 
     function createScoreTable() {
@@ -194,6 +208,7 @@
 
       highlightScores(totals);
       saveGame();
+      return totals; // Return totals for other functions to use
     }
 
     function highlightScores(totals) {
@@ -283,7 +298,10 @@
     }
 
     function clearScores() {
-      if (!confirm("Clear all scores and reset the game?")) return;
+      if(document.getElementById('winnerModal').classList.contains('hidden')) {
+        if (!confirm("Clear all scores and reset the game?")) return;
+      }
+      closeModal();
       localStorage.removeItem("scoreData");
       location.reload();
     }
@@ -336,6 +354,72 @@
         link.href = canvas.toDataURL('image/jpeg', 0.9);
         link.click();
       });
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('winnerModal');
+      const modalContent = document.getElementById('modalContent');
+      modalContent.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200); // Match transition duration
+    }
+
+    function endGame() {
+      const totals = updateTotals();
+      const playerData = playerNames.map((name, index) => ({
+        name: name,
+        score: totals[index]
+      })).sort((a, b) => b.score - a.score);
+
+      const winnerList = document.getElementById('winnerList');
+      winnerList.innerHTML = ''; // Clear previous results
+
+      const awards = ['🏆', '🥈', '🥉'];
+      let lastScore = -Infinity;
+      let rank = -1;
+
+      // Show top 3 or more in case of ties
+      const playersToShow = playerData.slice(0, 3);
+      // Add any player tied with 3rd place
+      if (playerData.length > 3 && playerData[2].score === playerData[3].score) {
+          for(let i = 3; i < playerData.length; i++) {
+              if (playerData[i].score === playerData[2].score) {
+                  playersToShow.push(playerData[i]);
+              } else {
+                  break;
+              }
+          }
+      }
+      
+      playersToShow.forEach((player, index) => {
+        if (player.score < lastScore) {
+          rank++;
+        }
+        if (index === 0) {
+            rank = 0;
+        }
+        lastScore = player.score;
+
+        const award = rank < 3 ? awards[rank] : '🏅';
+        
+        winnerList.innerHTML += `
+          <div class="flex items-center bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+            <span class="text-4xl w-12">${award}</span>
+            <div class="flex-grow text-left ml-4">
+              <p class="text-xl font-bold">${player.name}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">${player.score} points</p>
+            </div>
+          </div>
+        `;
+      });
+      
+      const modal = document.getElementById('winnerModal');
+      const modalContent = document.getElementById('modalContent');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+         modalContent.classList.remove('scale-95', 'opacity-0');
+      }, 10); // A small delay to allow the display property to apply
     }
 
     window.onload = loadGame;
