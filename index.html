@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-white text-black dark:bg-gray-900 dark:text-white">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Card Game Score Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+<body class="p-4">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">Card Game Score Tracker</h1>
+    <div>
+      <button onclick="editPlayers()" class="px-4 py-2 bg-yellow-500 text-white rounded mr-2">Edit Player Name</button>
+      <button onclick="exportTableToPDF()" class="px-4 py-2 bg-indigo-500 text-white rounded">Print Score Board</button>
+    </div>
+  </div>
+
+  <div id="playerInput" class="mb-4">
+    <label for="numPlayers" class="block mb-2 font-semibold">Number of Players:</label>
+    <input type="number" id="numPlayers" min="2" max="10" class="border p-2 w-32" />
+    <button onclick="setupPlayers()" class="ml-2 px-4 py-2 bg-green-500 text-white rounded">Next</button>
+  </div>
+
+  <div id="nameInput" class="hidden mb-4">
+    <h3 class="text-lg font-semibold mb-2">Enter Player Names</h3>
+    <div id="nameFields" class="mb-2"></div>
+    <button onclick="savePlayerNames()" class="px-4 py-2 bg-green-600 text-white rounded">Save Names</button>
+  </div>
+
+  <div id="scoreBoard" class="hidden">
+    <div class="overflow-x-auto">
+      <table class="table-auto border w-full" id="scoreTable">
+        <thead class="sticky top-0 bg-gray-200 dark:bg-gray-700">
+          <tr id="headerRow" class="border">
+            <th class="border px-2 py-1">Round</th>
+          </tr>
+        </thead>
+        <tbody id="scoreBody"></tbody>
+        <tfoot class="sticky bottom-0 bg-gray-200 dark:bg-gray-700">
+          <tr id="totalRow" class="border font-bold">
+            <th class="border px-2 py-1">Total</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="mt-4">
+      <button onclick="addScoreRow()" class="px-4 py-2 bg-blue-500 text-white rounded mr-2">Add Round</button>
+      <button onclick="toggleOldRounds()" class="px-4 py-2 bg-purple-500 text-white rounded mr-2">Show/Hide Old Rounds</button>
+      <button onclick="clearOnlyScores()" class="px-4 py-2 bg-orange-500 text-white rounded mr-2">Clear Scores</button>
+      <button onclick="clearScores()" class="px-4 py-2 bg-red-500 text-white rounded">Reset Game</button>
+    </div>
+  </div>
+
+  <script>
+    let playerNames = [];
+    let round = 0;
+    let showingOldRounds = true;
+
+    function setupPlayers() {
+      const numPlayers = document.getElementById('numPlayers').value;
+      if (numPlayers < 2) {
+        alert("Please enter at least 2 players.");
+        return;
+      }
+
+      document.getElementById('playerInput').classList.add('hidden');
+      document.getElementById('nameInput').classList.remove('hidden');
+
+      const nameFields = document.getElementById('nameFields');
+      nameFields.innerHTML = "";
+      for (let i = 0; i < numPlayers; i++) {
+        const existingName = playerNames[i] || "";
+        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-64" value="${existingName}" placeholder="Player ${i + 1} Name">`;
+      }
+      // Change the button text for the initial setup
+      document.querySelector('#nameInput button').textContent = 'Start Game';
+    }
+
+    function createScoreTable() {
+      // This function is now only responsible for setting up the score table display
+      // It assumes playerNames array is already updated
+      document.getElementById('nameInput').classList.add('hidden');
+      document.getElementById('scoreBoard').classList.remove('hidden');
+
+      const headerRow = document.getElementById("headerRow");
+      const totalRow = document.getElementById("totalRow");
+      headerRow.innerHTML = "<th class='border px-2 py-1'>Round</th>";
+      totalRow.innerHTML = "<th class='border px-2 py-1'>Total</th>";
+
+      playerNames.forEach((name, index) => {
+        headerRow.innerHTML += `<th id="header${index}" class='border px-2 py-1 bg-gray-100 dark:bg-gray-800'>${name}</th>`;
+        totalRow.innerHTML += `<td id="total${index}" class="border px-2 py-1 font-bold bg-gray-100 dark:bg-gray-800">0</td>`;
+      });
+
+      updateTotals();
+      saveGame();
+    }
+
+    function savePlayerNames() {
+      const numPlayers = document.getElementById('numPlayers').value || playerNames.length; // Use current player count if setting up initially, or existing count if editing
+      const newNames = [];
+
+      for (let i = 0; i < numPlayers; i++) {
+        const nameInput = document.getElementById(`player${i}`);
+        if (!nameInput) { // This can happen if the number of players was reduced during editing
+            newNames.push(playerNames[i]); // Keep the old name if the input field doesn't exist
+            continue;
+        }
+        const name = nameInput.value.trim();
+        if (name === "") {
+          alert("Please enter all player names.");
+          return;
+        }
+        newNames.push(name);
+      }
+
+      playerNames = newNames;
+      createScoreTable(); // This will refresh the scoreboard with new names and re-calculate totals
+    }
+
+    function editPlayers() {
+      document.getElementById('playerInput').classList.add('hidden'); // Hide player count input
+      document.getElementById('scoreBoard').classList.add('hidden'); // Hide scoreboard
+      document.getElementById('nameInput').classList.remove('hidden'); // Show name input
+
+      const nameFields = document.getElementById('nameFields');
+      nameFields.innerHTML = "";
+      playerNames.forEach((name, i) => {
+        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-64" value="${name}" placeholder="Player ${i + 1} Name">`;
+      });
+      // Change the button text for editing
+      document.querySelector('#nameInput button').textContent = 'Save Names';
+    }
+
+    function addScoreRow() {
+      round++;
+      const tbody = document.getElementById("scoreBody");
+      const newRow = document.createElement("tr");
+      newRow.id = `round${round}`;
+      newRow.innerHTML = `<td class='border px-2 py-1'>${round}</td>`;
+
+      playerNames.forEach((_, index) => {
+        newRow.innerHTML += `<td class='border px-2 py-1'><input type="number" value="0" class="w-16 p-1 text-center border rounded" id="score${round}-${index}" oninput="updateTotals()"></td>`;
+      });
+
+      tbody.appendChild(newRow);
+      updateTotals();
+    }
+
+    function updateTotals() {
+      let totals = [];
+
+      playerNames.forEach((_, index) => {
+        let total = 0;
+        for (let r = 1; r <= round; r++) {
+          const scoreInput = document.getElementById(`score${r}-${index}`);
+          if (scoreInput) {
+            const score = parseInt(scoreInput.value) || 0;
+            total += score;
+          }
+        }
+        totals.push(total);
+        document.getElementById(`total${index}`).innerText = total;
+      });
+
+      highlightScores(totals);
+      saveGame();
+    }
+
+    function highlightScores(totals) {
+      const maxScore = Math.max(...totals);
+      const minScore = Math.min(...totals);
+
+      playerNames.forEach((_, index) => {
+        const headerCell = document.getElementById(`header${index}`);
+        const totalCell = document.getElementById(`total${index}`);
+        headerCell.classList.remove("bg-green-300", "bg-red-300");
+        totalCell.classList.remove("bg-green-300", "bg-red-300");
+
+        // Apply highlights only if there's more than one player or if max and min are different
+        if (playerNames.length > 1) {
+            if (totals[index] === maxScore) {
+                headerCell.classList.add("bg-green-300");
+                totalCell.classList.add("bg-green-300");
+            }
+            if (totals[index] === minScore) {
+                headerCell.classList.add("bg-red-300");
+                totalCell.classList.add("bg-red-300");
+            }
+        } else if (playerNames.length === 1) { // For a single player, highlight based on score being positive/negative or just a neutral highlight
+            if (totals[index] > 0) {
+                headerCell.classList.add("bg-green-300");
+                totalCell.classList.add("bg-green-300");
+            } else if (totals[index] < 0) {
+                headerCell.classList.add("bg-red-300");
+                totalCell.classList.add("bg-red-300");
+            }
+        }
+      });
+    }
+
+    function saveGame() {
+      const data = {
+        players: playerNames,
+        scores: [],
+      };
+      for (let r = 1; r <= round; r++) {
+        const rowScores = [];
+        for (let i = 0; i < playerNames.length; i++) {
+          const scoreInput = document.getElementById(`score${r}-${i}`);
+          const score = scoreInput ? parseInt(scoreInput.value) || 0 : 0;
+          rowScores.push(score);
+        }
+        data.scores.push(rowScores);
+      }
+      localStorage.setItem("scoreData", JSON.stringify(data));
+    }
+
+    function loadGame() {
+      const savedData = localStorage.getItem("scoreData");
+      if (!savedData) return;
+
+      const data = JSON.parse(savedData);
+      playerNames = data.players || [];
+      round = 0;
+
+      if (playerNames.length === 0) return;
+
+      document.getElementById('playerInput').classList.add('hidden');
+      document.getElementById('nameInput').classList.add('hidden');
+      document.getElementById('scoreBoard').classList.remove('hidden');
+
+      const headerRow = document.getElementById("headerRow");
+      const totalRow = document.getElementById("totalRow");
+      headerRow.innerHTML = "<th class='border px-2 py-1'>Round</th>";
+      totalRow.innerHTML = "<th class='border px-2 py-1'>Total</th>";
+
+      playerNames.forEach((name, index) => {
+        headerRow.innerHTML += `<th id="header${index}" class='border px-2 py-1 bg-gray-100 dark:bg-gray-800'>${name}</th>`;
+        totalRow.innerHTML += `<td id="total${index}" class="border px-2 py-1 font-bold bg-gray-100 dark:bg-gray-800">0</td>`;
+      });
+
+      const tbody = document.getElementById("scoreBody");
+      tbody.innerHTML = "";
+      data.scores.forEach(rowScores => {
+        round++;
+        const newRow = document.createElement("tr");
+        newRow.id = `round${round}`;
+        newRow.innerHTML = `<td class='border px-2 py-1'>${round}</td>`;
+        // Ensure that scores are loaded for the current number of players.
+        // If player count changed, we'll only load scores for existing players.
+        playerNames.forEach((_, idx) => {
+            const score = rowScores[idx] !== undefined ? rowScores[idx] : 0; // Use 0 if score doesn't exist for new player
+            newRow.innerHTML += `<td class='border px-2 py-1'><input type="number" value="${score}" class="w-16 p-1 text-center border rounded" id="score${round}-${idx}" oninput="updateTotals()"></td>`;
+        });
+        tbody.appendChild(newRow);
+      });
+
+      updateTotals();
+    }
+
+    function clearScores() {
+      if (!confirm("Clear all scores and reset the game?")) return;
+      localStorage.removeItem("scoreData");
+      location.reload();
+    }
+
+    function clearOnlyScores() {
+      if (!confirm("Clear all scores and rounds but keep the player names?")) return;
+      round = 0;
+      document.getElementById("scoreBody").innerHTML = "";
+      updateTotals();
+      saveGame();
+    }
+
+    function toggleOldRounds() {
+      showingOldRounds = !showingOldRounds;
+      const button = event.target;
+      const allRows = document.querySelectorAll("#scoreBody tr");
+      
+      if(showingOldRounds){
+        button.textContent = 'Hide Old Rounds';
+        allRows.forEach(row => row.style.display = '');
+      } else {
+        button.textContent = 'Show All Rounds';
+        allRows.forEach((row, index) => {
+          if(index < allRows.length - 5){
+            row.style.display = 'none';
+          }
+        });
+      }
+    }
+
+    function exportTableToPDF() {
+      // First, ensure all rounds are visible for the export
+      const wereRoundsHidden = !showingOldRounds;
+      if (wereRoundsHidden) {
+        // Find the button and simulate a click to show all rounds
+        // This is a bit indirect, a better way is to just set the state and update display
+        showingOldRounds = true;
+        document.querySelectorAll("#scoreBody tr").forEach(row => row.style.display = '');
+        document.querySelector('button[onclick="toggleOldRounds()"]').textContent = 'Hide Old Rounds';
+      }
+
+      const style = document.createElement('style');
+      style.id = 'print-style';
+      style.innerHTML = `
+        @media print {
+          body * { visibility: hidden; }
+          #scoreBoard, #scoreBoard * { visibility: visible; }
+          #scoreBoard { position: absolute; left: 0; top: 0; width: 100%; }
+          thead, tfoot { position: static !important; }
+          #scoreBoard .mt-4 { display: none; }
+        }
+      `;
+      document.head.appendChild(style);
+      window.print();
+      document.getElementById('print-style').remove();
+
+      if (wereRoundsHidden) {
+        // Revert the visibility of old rounds if they were hidden before
+        showingOldRounds = false;
+        const allRows = document.querySelectorAll("#scoreBody tr");
+        allRows.forEach((row, index) => {
+          if(index < allRows.length - 5){
+            row.style.display = 'none';
+          }
+        });
+        document.querySelector('button[onclick="toggleOldRounds()"]').textContent = 'Show All Rounds';
+      }
+    }
+
+    window.onload = loadGame;
+  </script>
+</body>
+</html>
