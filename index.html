@@ -5,49 +5,80 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Card Game Score Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-<body class="p-4">
-  <div class="flex justify-between items-center mb-4">
-    <h1 class="text-2xl font-bold">Card Game Score Tracker</h1>
-    <div>
-      <button onclick="editPlayers()" class="px-4 py-2 bg-yellow-500 text-white rounded mr-2">Edit Player Name</button>
-      <button onclick="exportTableToPDF()" class="px-4 py-2 bg-indigo-500 text-white rounded">Print Score Board</button>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    /* Custom style to make the first column sticky */
+    .sticky-col {
+      position: -webkit-sticky;
+      position: sticky;
+      left: 0;
+      z-index: 10;
+    }
+    .dark .sticky-col {
+        background-color: #1f2937; /* Corresponds to dark:bg-gray-800 */
+    }
+    .sticky-col {
+        background-color: #f3f4f6; /* Corresponds to bg-gray-100 */
+    }
+
+    tfoot .sticky-col {
+        background-color: #e5e7eb; /* Corresponds to bg-gray-200 */
+    }
+
+    .dark tfoot .sticky-col {
+        background-color: #374151; /* Corresponds to dark:bg-gray-700 */
+    }
+
+    thead .sticky-col {
+        background-color: #e5e7eb; /* Corresponds to bg-gray-200 */
+    }
+    .dark thead .sticky-col {
+        background-color: #374151; /* Corresponds to dark:bg-gray-700 */
+    }
+  </style>
+</head>
+<body class="p-4 max-w-4xl mx-auto">
+  <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+    <h1 class="text-3xl font-bold text-center">Card Game Score Tracker</h1>
+    <div id="headerActions" class="flex gap-2 hidden">
+      <button onclick="editPlayers()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow-md hover:bg-yellow-600 transition-colors">Edit Players</button>
+      <button onclick="takeScreenshot()" class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow-md hover:bg-indigo-600 transition-colors">Screenshot</button>
     </div>
   </div>
 
-  <div id="playerInput" class="mb-4">
+  <div id="playerInput" class="mb-4 text-center">
     <label for="numPlayers" class="block mb-2 font-semibold">Number of Players:</label>
-    <input type="number" id="numPlayers" min="2" max="10" class="border p-2 w-32" />
-    <button onclick="setupPlayers()" class="ml-2 px-4 py-2 bg-green-500 text-white rounded">Next</button>
+    <input type="number" id="numPlayers" min="2" max="10" class="border p-2 w-32 rounded-lg" />
+    <button onclick="setupPlayers()" class="ml-2 px-4 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600 transition-colors">Next</button>
   </div>
 
   <div id="nameInput" class="hidden mb-4">
-    <h3 class="text-lg font-semibold mb-2">Enter Player Names</h3>
-    <div id="nameFields" class="mb-2"></div>
-    <button onclick="savePlayerNames()" class="px-4 py-2 bg-green-600 text-white rounded">Save Names</button>
+    <h3 class="text-xl font-semibold mb-4 text-center">Enter Player Names</h3>
+    <div id="nameFields" class="mb-4 flex flex-col gap-2 items-center"></div>
+    <button id="startGameBtn" onclick="createScoreTable()" class="w-full max-w-xs mx-auto block px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-colors">Start Game</button>
   </div>
 
   <div id="scoreBoard" class="hidden">
-    <div class="overflow-x-auto">
-      <table class="table-auto border w-full" id="scoreTable">
-        <thead class="sticky top-0 bg-gray-200 dark:bg-gray-700">
-          <tr id="headerRow" class="border">
-            <th class="border px-2 py-1">Round</th>
+    <div class="overflow-x-auto rounded-lg shadow-lg">
+      <table class="table-auto border-collapse w-full" id="scoreTable">
+        <thead class="sticky top-0 bg-gray-200 dark:bg-gray-700 z-20">
+          <tr id="headerRow" class="border-b-2 border-gray-300 dark:border-gray-600">
+            <th class="border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col">Round</th>
           </tr>
         </thead>
         <tbody id="scoreBody"></tbody>
-        <tfoot class="sticky bottom-0 bg-gray-200 dark:bg-gray-700">
-          <tr id="totalRow" class="border font-bold">
-            <th class="border px-2 py-1">Total</th>
+        <tfoot class="sticky bottom-0 bg-gray-200 dark:bg-gray-700 z-20">
+          <tr id="totalRow" class="border-t-2 border-gray-300 dark:border-gray-600 font-bold">
+            <th class="border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col">Total</th>
           </tr>
         </tfoot>
       </table>
     </div>
-    <div class="mt-4">
-      <button onclick="addScoreRow()" class="px-4 py-2 bg-blue-500 text-white rounded mr-2">Add Round</button>
-      <button onclick="toggleOldRounds()" class="px-4 py-2 bg-purple-500 text-white rounded mr-2">Show/Hide Old Rounds</button>
-      <button onclick="clearOnlyScores()" class="px-4 py-2 bg-orange-500 text-white rounded mr-2">Clear Scores</button>
-      <button onclick="clearScores()" class="px-4 py-2 bg-red-500 text-white rounded">Reset Game</button>
+    <div class="mt-6 flex flex-wrap justify-center gap-3">
+      <button onclick="addScoreRow()" class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition-colors">Add Round</button>
+      <button onclick="toggleOldRounds(this)" class="px-4 py-2 bg-purple-500 text-white rounded-lg shadow-md hover:bg-purple-600 transition-colors">Hide Old Rounds</button>
+      <button onclick="clearOnlyScores()" class="px-4 py-2 bg-orange-500 text-white rounded-lg shadow-md hover:bg-orange-600 transition-colors">Clear Scores</button>
+      <button onclick="clearScores()" class="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition-colors">Reset Game</button>
     </div>
   </div>
 
@@ -57,56 +88,31 @@
     let showingOldRounds = true;
 
     function setupPlayers() {
-      const numPlayers = document.getElementById('numPlayers').value;
-      if (numPlayers < 2) {
-        alert("Please enter at least 2 players.");
+      const numPlayersInput = document.getElementById('numPlayers');
+      const numPlayers = numPlayersInput.value;
+      if (numPlayers < 2 || numPlayers > 10) {
+        alert("Please enter a number of players between 2 and 10.");
         return;
       }
 
       document.getElementById('playerInput').classList.add('hidden');
       document.getElementById('nameInput').classList.remove('hidden');
+      document.getElementById('headerActions').classList.add('hidden'); // Hide buttons
 
       const nameFields = document.getElementById('nameFields');
       nameFields.innerHTML = "";
       for (let i = 0; i < numPlayers; i++) {
         const existingName = playerNames[i] || "";
-        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-64" value="${existingName}" placeholder="Player ${i + 1} Name">`;
+        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-full max-w-xs rounded-lg dark:bg-gray-800" value="${existingName}" placeholder="Player ${i + 1} Name">`;
       }
-      // Change the button text for the initial setup
-      document.querySelector('#nameInput button').textContent = 'Start Game';
     }
 
     function createScoreTable() {
-      // This function is now only responsible for setting up the score table display
-      // It assumes playerNames array is already updated
-      document.getElementById('nameInput').classList.add('hidden');
-      document.getElementById('scoreBoard').classList.remove('hidden');
-
-      const headerRow = document.getElementById("headerRow");
-      const totalRow = document.getElementById("totalRow");
-      headerRow.innerHTML = "<th class='border px-2 py-1'>Round</th>";
-      totalRow.innerHTML = "<th class='border px-2 py-1'>Total</th>";
-
-      playerNames.forEach((name, index) => {
-        headerRow.innerHTML += `<th id="header${index}" class='border px-2 py-1 bg-gray-100 dark:bg-gray-800'>${name}</th>`;
-        totalRow.innerHTML += `<td id="total${index}" class="border px-2 py-1 font-bold bg-gray-100 dark:bg-gray-800">0</td>`;
-      });
-
-      updateTotals();
-      saveGame();
-    }
-
-    function savePlayerNames() {
-      const numPlayers = document.getElementById('numPlayers').value || playerNames.length; // Use current player count if setting up initially, or existing count if editing
+      const numPlayers = document.querySelectorAll('#nameFields input').length;
       const newNames = [];
 
       for (let i = 0; i < numPlayers; i++) {
-        const nameInput = document.getElementById(`player${i}`);
-        if (!nameInput) { // This can happen if the number of players was reduced during editing
-            newNames.push(playerNames[i]); // Keep the old name if the input field doesn't exist
-            continue;
-        }
-        const name = nameInput.value.trim();
+        const name = document.getElementById(`player${i}`).value.trim();
         if (name === "") {
           alert("Please enter all player names.");
           return;
@@ -115,21 +121,37 @@
       }
 
       playerNames = newNames;
-      createScoreTable(); // This will refresh the scoreboard with new names and re-calculate totals
+      document.getElementById('numPlayers').value = playerNames.length;
+      document.getElementById('nameInput').classList.add('hidden');
+      document.getElementById('scoreBoard').classList.remove('hidden');
+      document.getElementById('headerActions').classList.remove('hidden'); // Show buttons
+
+      const headerRow = document.getElementById("headerRow");
+      const totalRow = document.getElementById("totalRow");
+      headerRow.innerHTML = "<th class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col'>Round</th>";
+      totalRow.innerHTML = "<th class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col'>Total</th>";
+
+      playerNames.forEach((name, index) => {
+        headerRow.innerHTML += `<th id="header${index}" class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 bg-gray-100 dark:bg-gray-800 transition-colors'>${name}</th>`;
+        totalRow.innerHTML += `<td id="total${index}" class="border-r border-gray-300 dark:border-gray-600 px-3 py-2 font-bold bg-gray-100 dark:bg-gray-800 text-center transition-colors">0</td>`;
+      });
+
+      updateTotals();
+      saveGame();
     }
 
     function editPlayers() {
-      document.getElementById('playerInput').classList.add('hidden'); // Hide player count input
-      document.getElementById('scoreBoard').classList.add('hidden'); // Hide scoreboard
-      document.getElementById('nameInput').classList.remove('hidden'); // Show name input
+      document.getElementById('scoreBoard').classList.add('hidden');
+      document.getElementById('headerActions').classList.add('hidden'); // Hide buttons
+      document.getElementById('nameInput').classList.remove('hidden');
+      document.getElementById('startGameBtn').innerText = 'Save Changes';
+
 
       const nameFields = document.getElementById('nameFields');
       nameFields.innerHTML = "";
       playerNames.forEach((name, i) => {
-        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-64" value="${name}" placeholder="Player ${i + 1} Name">`;
+        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-full max-w-xs rounded-lg dark:bg-gray-800" value="${name}" placeholder="Player ${i + 1} Name">`;
       });
-      // Change the button text for editing
-      document.querySelector('#nameInput button').textContent = 'Save Names';
     }
 
     function addScoreRow() {
@@ -137,64 +159,62 @@
       const tbody = document.getElementById("scoreBody");
       const newRow = document.createElement("tr");
       newRow.id = `round${round}`;
-      newRow.innerHTML = `<td class='border px-2 py-1'>${round}</td>`;
+      newRow.className = 'border-b border-gray-200 dark:border-gray-700';
+      newRow.innerHTML = `<td class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 font-semibold sticky-col'>${round}</td>`;
 
       playerNames.forEach((_, index) => {
-        newRow.innerHTML += `<td class='border px-2 py-1'><input type="number" value="0" class="w-16 p-1 text-center border rounded" id="score${round}-${index}" oninput="updateTotals()"></td>`;
+        newRow.innerHTML += `<td class='border-r border-gray-300 dark:border-gray-600 p-1'><input type="number" value="0" class="w-20 p-1 text-center border rounded-md dark:bg-gray-800" id="score${round}-${index}" oninput="updateTotals()"></td>`;
       });
 
       tbody.appendChild(newRow);
+      if (!showingOldRounds) {
+          toggleOldRounds(document.querySelector('[onclick^="toggleOldRounds"]'), true);
+      }
       updateTotals();
     }
 
     function updateTotals() {
       let totals = [];
+      const numPlayers = playerNames.length;
 
-      playerNames.forEach((_, index) => {
+      for (let i = 0; i < numPlayers; i++) {
         let total = 0;
         for (let r = 1; r <= round; r++) {
-          const scoreInput = document.getElementById(`score${r}-${index}`);
+          const scoreInput = document.getElementById(`score${r}-${i}`);
           if (scoreInput) {
-            const score = parseInt(scoreInput.value) || 0;
-            total += score;
+            total += parseInt(scoreInput.value) || 0;
           }
         }
         totals.push(total);
-        document.getElementById(`total${index}`).innerText = total;
-      });
+        const totalCell = document.getElementById(`total${i}`);
+        if (totalCell) {
+            totalCell.innerText = total;
+        }
+      }
 
       highlightScores(totals);
       saveGame();
     }
 
     function highlightScores(totals) {
+        if(totals.length === 0) return;
+        
       const maxScore = Math.max(...totals);
       const minScore = Math.min(...totals);
 
       playerNames.forEach((_, index) => {
         const headerCell = document.getElementById(`header${index}`);
         const totalCell = document.getElementById(`total${index}`);
-        headerCell.classList.remove("bg-green-300", "bg-red-300");
-        totalCell.classList.remove("bg-green-300", "bg-red-300");
-
-        // Apply highlights only if there's more than one player or if max and min are different
-        if (playerNames.length > 1) {
-            if (totals[index] === maxScore) {
-                headerCell.classList.add("bg-green-300");
-                totalCell.classList.add("bg-green-300");
-            }
-            if (totals[index] === minScore) {
-                headerCell.classList.add("bg-red-300");
-                totalCell.classList.add("bg-red-300");
-            }
-        } else if (playerNames.length === 1) { // For a single player, highlight based on score being positive/negative or just a neutral highlight
-            if (totals[index] > 0) {
-                headerCell.classList.add("bg-green-300");
-                totalCell.classList.add("bg-green-300");
-            } else if (totals[index] < 0) {
-                headerCell.classList.add("bg-red-300");
-                totalCell.classList.add("bg-red-300");
-            }
+        headerCell.classList.remove("bg-green-300", "bg-red-300", "dark:bg-green-700", "dark:bg-red-700");
+        totalCell.classList.remove("bg-green-300", "bg-red-300", "dark:bg-green-700", "dark:bg-red-700");
+        
+        if (totals.length > 1 && totals[index] === maxScore) {
+          headerCell.classList.add("bg-green-300", "dark:bg-green-700");
+          totalCell.classList.add("bg-green-300", "dark:bg-green-700");
+        }
+        if (totals.length > 1 && totals[index] === minScore) {
+          headerCell.classList.add("bg-red-300", "dark:bg-red-700");
+          totalCell.classList.add("bg-red-300", "dark:bg-red-700");
         }
       });
     }
@@ -206,12 +226,15 @@
       };
       for (let r = 1; r <= round; r++) {
         const rowScores = [];
-        for (let i = 0; i < playerNames.length; i++) {
-          const scoreInput = document.getElementById(`score${r}-${i}`);
-          const score = scoreInput ? parseInt(scoreInput.value) || 0 : 0;
-          rowScores.push(score);
+        const rowExists = document.getElementById(`round${r}`);
+        if(rowExists){
+            for (let i = 0; i < playerNames.length; i++) {
+              const scoreInput = document.getElementById(`score${r}-${i}`);
+              const score = scoreInput ? parseInt(scoreInput.value) || 0 : 0;
+              rowScores.push(score);
+            }
+            data.scores.push(rowScores);
         }
-        data.scores.push(rowScores);
       }
       localStorage.setItem("scoreData", JSON.stringify(data));
     }
@@ -222,22 +245,24 @@
 
       const data = JSON.parse(savedData);
       playerNames = data.players || [];
-      round = 0;
-
+      
       if (playerNames.length === 0) return;
-
+      
+      round = 0;
+      document.getElementById('numPlayers').value = playerNames.length;
       document.getElementById('playerInput').classList.add('hidden');
       document.getElementById('nameInput').classList.add('hidden');
       document.getElementById('scoreBoard').classList.remove('hidden');
+      document.getElementById('headerActions').classList.remove('hidden'); // Show buttons
 
       const headerRow = document.getElementById("headerRow");
       const totalRow = document.getElementById("totalRow");
-      headerRow.innerHTML = "<th class='border px-2 py-1'>Round</th>";
-      totalRow.innerHTML = "<th class='border px-2 py-1'>Total</th>";
+      headerRow.innerHTML = "<th class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col'>Round</th>";
+      totalRow.innerHTML = "<th class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col'>Total</th>";
 
       playerNames.forEach((name, index) => {
-        headerRow.innerHTML += `<th id="header${index}" class='border px-2 py-1 bg-gray-100 dark:bg-gray-800'>${name}</th>`;
-        totalRow.innerHTML += `<td id="total${index}" class="border px-2 py-1 font-bold bg-gray-100 dark:bg-gray-800">0</td>`;
+        headerRow.innerHTML += `<th id="header${index}" class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 bg-gray-100 dark:bg-gray-800 transition-colors'>${name}</th>`;
+        totalRow.innerHTML += `<td id="total${index}" class="border-r border-gray-300 dark:border-gray-600 px-3 py-2 font-bold bg-gray-100 dark:bg-gray-800 text-center transition-colors">0</td>`;
       });
 
       const tbody = document.getElementById("scoreBody");
@@ -246,12 +271,10 @@
         round++;
         const newRow = document.createElement("tr");
         newRow.id = `round${round}`;
-        newRow.innerHTML = `<td class='border px-2 py-1'>${round}</td>`;
-        // Ensure that scores are loaded for the current number of players.
-        // If player count changed, we'll only load scores for existing players.
-        playerNames.forEach((_, idx) => {
-            const score = rowScores[idx] !== undefined ? rowScores[idx] : 0; // Use 0 if score doesn't exist for new player
-            newRow.innerHTML += `<td class='border px-2 py-1'><input type="number" value="${score}" class="w-16 p-1 text-center border rounded" id="score${round}-${idx}" oninput="updateTotals()"></td>`;
+        newRow.className = 'border-b border-gray-200 dark:border-gray-700';
+        newRow.innerHTML = `<td class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 font-semibold sticky-col'>${round}</td>`;
+        rowScores.forEach((score, idx) => {
+          newRow.innerHTML += `<td class='border-r border-gray-300 dark:border-gray-600 p-1'><input type="number" value="${score}" class="w-20 p-1 text-center border rounded-md dark:bg-gray-800" id="score${round}-${idx}" oninput="updateTotals()"></td>`;
         });
         tbody.appendChild(newRow);
       });
@@ -270,64 +293,49 @@
       round = 0;
       document.getElementById("scoreBody").innerHTML = "";
       updateTotals();
-      saveGame();
     }
 
-    function toggleOldRounds() {
-      showingOldRounds = !showingOldRounds;
-      const button = event.target;
-      const allRows = document.querySelectorAll("#scoreBody tr");
-      
-      if(showingOldRounds){
-        button.textContent = 'Hide Old Rounds';
-        allRows.forEach(row => row.style.display = '');
-      } else {
-        button.textContent = 'Show All Rounds';
-        allRows.forEach((row, index) => {
-          if(index < allRows.length - 5){
-            row.style.display = 'none';
-          }
-        });
-      }
-    }
-
-    function exportTableToPDF() {
-      // First, ensure all rounds are visible for the export
-      const wereRoundsHidden = !showingOldRounds;
-      if (wereRoundsHidden) {
-        // Find the button and simulate a click to show all rounds
-        // This is a bit indirect, a better way is to just set the state and update display
-        showingOldRounds = true;
-        document.querySelectorAll("#scoreBody tr").forEach(row => row.style.display = '');
-        document.querySelector('button[onclick="toggleOldRounds()"]').textContent = 'Hide Old Rounds';
-      }
-
-      const style = document.createElement('style');
-      style.id = 'print-style';
-      style.innerHTML = `
-        @media print {
-          body * { visibility: hidden; }
-          #scoreBoard, #scoreBoard * { visibility: visible; }
-          #scoreBoard { position: absolute; left: 0; top: 0; width: 100%; }
-          thead, tfoot { position: static !important; }
-          #scoreBoard .mt-4 { display: none; }
+    function toggleOldRounds(button, forceUpdate = false) {
+        if (!forceUpdate) {
+            showingOldRounds = !showingOldRounds;
         }
-      `;
-      document.head.appendChild(style);
-      window.print();
-      document.getElementById('print-style').remove();
 
-      if (wereRoundsHidden) {
-        // Revert the visibility of old rounds if they were hidden before
-        showingOldRounds = false;
-        const allRows = document.querySelectorAll("#scoreBody tr");
-        allRows.forEach((row, index) => {
-          if(index < allRows.length - 5){
-            row.style.display = 'none';
-          }
-        });
-        document.querySelector('button[onclick="toggleOldRounds()"]').textContent = 'Show All Rounds';
-      }
+        for (let r = 1; r <= round; r++) {
+            const row = document.getElementById(`round${r}`);
+            if (row) {
+                if (showingOldRounds || r > round - 3) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            }
+        }
+        
+        if (button) {
+            button.innerText = showingOldRounds ? 'Hide Old Rounds' : 'Show All Rounds';
+        }
+    }
+
+
+    function takeScreenshot() {
+      const scoreBoard = document.getElementById("scoreBoard");
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      
+      const filename = `Scores_${day}-${month}-${year}_${hours}${minutes}.jpeg`;
+
+      html2canvas(scoreBoard, {
+        scale: 2
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+      });
     }
 
     window.onload = loadGame;
