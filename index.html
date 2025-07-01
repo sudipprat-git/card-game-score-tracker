@@ -31,11 +31,12 @@
         .light .hover\:bg-gray-100:hover {
             background-color: #f7fafc;
         }
-        .light .bg-green-200 {
-            background-color: #b9fbc0; /* Light green for winner */
+        /* Custom highlight colors for light mode - Adjusted for better contrast */
+        .light .highlight-winner {
+            background-color: #4ade80; /* Tailwind green-400, darker than 300 */
         }
-        .light .bg-red-200 {
-            background-color: #fecaca; /* Light red for loser */
+        .light .highlight-loser {
+            background-color: #ef4444; /* Tailwind red-500, darker than 300 */
         }
         .light .bg-blue-500 {
             background-color: #3b82f6;
@@ -61,11 +62,12 @@
         .dark .hover\:bg-gray-700:hover {
             background-color: #4a5568;
         }
-        .dark .bg-green-700 {
-            background-color: #166534; /* Darker green for winner */
+        /* Custom highlight colors for dark mode */
+        .dark .highlight-winner {
+            background-color: #166534; /* Tailwind green-800 */
         }
-        .dark .bg-red-700 {
-            background-color: #b91c1c; /* Darker red for loser */
+        .dark .highlight-loser {
+            background-color: #991b1b; /* Tailwind red-800 */
         }
         .dark .bg-blue-500 {
             background-color: #3b82f6;
@@ -343,12 +345,6 @@
 </head>
 <body class="min-h-screen flex flex-col items-center py-8 px-4 transition-colors duration-300">
 
-    <!-- Dark Mode Toggle Button -->
-    <button id="darkModeToggle" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-md transition-colors duration-300">
-        <i class="fas fa-moon dark:hidden"></i>
-        <i class="fas fa-sun hidden dark:inline-block"></i>
-    </button>
-
     <div class="w-full max-w-4xl bg-card rounded-lg shadow-xl p-6 md:p-8 transition-colors duration-300">
         <h1 class="text-3xl md:text-4xl font-bold text-center mb-8">Card Game Score Tracker</h1>
 
@@ -407,7 +403,12 @@
         </div>
 
         <!-- Step 3: Scoreboard -->
-        <div id="scoreboardScreen" class="space-y-6">
+        <div id="scoreboardScreen" class="space-y-6 relative">
+            <!-- Dark Mode Toggle Button - Repositioned inside scoreboardScreen -->
+            <button id="darkModeToggle" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-md transition-colors duration-300 z-20">
+                <i id="darkModeIcon" class="fas"></i>
+            </button>
+
             <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6">Scoreboard</h2>
 
             <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-6 items-center">
@@ -438,7 +439,7 @@
                 <table id="scoreTable" class="w-full text-left border-collapse">
                     <thead class="sticky-header">
                         <tr class="bg-gray-200 dark:bg-gray-700">
-                            <th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg">Round</th>
+                            <th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg text-gray-800 dark:text-gray-200">Round</th>
                             <!-- Player names will be inserted here -->
                         </tr>
                     </thead>
@@ -615,6 +616,7 @@
         const screenshotLoadingModal = document.getElementById('screenshotLoadingModal');
 
         const darkModeToggle = document.getElementById('darkModeToggle');
+        const darkModeIcon = document.getElementById('darkModeIcon'); // Get the icon element
 
         // --- Local Storage Functions ---
         function saveGameState() {
@@ -679,13 +681,13 @@
             currentlyEditingRoundIndex = null;
 
             // Clear previous table content
-            scoreTable.querySelector('thead tr').innerHTML = '<th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg">Round</th>';
+            scoreTable.querySelector('thead tr').innerHTML = '<th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg text-gray-800 dark:text-gray-200">Round</th>';
             scoreTableBody.innerHTML = '';
 
             // Add player names to header
             gameState.playerNames.forEach((name, index) => {
                 const th = document.createElement('th');
-                th.className = 'p-3 border-r border-gray-300 dark:border-gray-600 text-center';
+                th.className = 'p-3 border-r border-gray-300 dark:border-gray-600 text-center text-gray-800 dark:text-gray-200'; // Added text color classes
                 th.textContent = name;
                 th.dataset.playerIndex = index; // Store player index for highlighting
                 scoreTable.querySelector('thead tr').appendChild(th);
@@ -719,7 +721,7 @@
             const isLatestRound = (roundNumber - 1) === (gameState.rounds.length - 1);
 
             const roundNumTd = document.createElement('td');
-            roundNumTd.className = 'p-3 border-r border-gray-200 dark:border-gray-700 font-semibold sticky-first-col flex items-center justify-between';
+            roundNumTd.className = 'p-3 border-r border-gray-200 dark:border-gray-700 font-semibold sticky-first-col flex items-center justify-between text-gray-800 dark:text-gray-200'; // Added text color classes
             
             // Conditionally add 'latest-round-active' class for the latest round's icon
             const iconClass = isLatestRound ? 'fas fa-pencil-alt edit-icon text-base latest-round-active' : 'fas fa-pencil-alt edit-icon text-base';
@@ -737,7 +739,7 @@
                 const input = document.createElement('input');
                 input.type = 'number';
                 input.value = scores[i] !== undefined ? scores[i] : 0;
-                input.className = 'w-full p-2 rounded-md bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 text-center';
+                input.className = 'w-full p-2 rounded-md bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-gray-800 dark:text-gray-200'; // Added text color classes to input
                 input.dataset.playerIndex = i;
                 input.addEventListener('input', handleScoreInput);
                 input.addEventListener('focus', handleInputFocus);
@@ -864,7 +866,7 @@
             totalsRow.className = 'font-bold bg-gray-200 dark:bg-gray-700 border-t-2 border-gray-400 dark:border-gray-500';
 
             const totalLabelTd = document.createElement('td');
-            totalLabelTd.className = 'p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-bl-lg';
+            totalLabelTd.className = 'p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-bl-lg text-gray-800 dark:text-gray-200'; // Added text color classes
             totalLabelTd.textContent = 'Totals';
             totalsRow.appendChild(totalLabelTd);
 
@@ -879,23 +881,23 @@
 
             // Reset highlighting on headers
             playerHeaderCells.forEach(th => {
-                th.classList.remove('bg-green-200', 'dark:bg-green-700', 'bg-red-200', 'dark:bg-red-700');
+                th.classList.remove('highlight-winner', 'highlight-loser'); // Use generic custom classes
             });
 
             totals.forEach((total, index) => {
                 const td = document.createElement('td');
-                td.className = 'p-3 border-r border-gray-200 dark:border-gray-700 text-center';
+                td.className = 'p-3 border-r border-gray-200 dark:border-gray-700 text-center text-gray-800 dark:text-gray-200'; // Added text color classes
                 td.textContent = total;
 
                 // Apply highlighting to total score cell and player name header
                 if (totals.length > 0) { // Only highlight if there are scores
                     if (total === highestScore) {
-                        td.classList.add('bg-green-200', 'dark:bg-green-700');
-                        playerHeaderCells[index].classList.add('bg-green-200', 'dark:bg-green-700');
+                        td.classList.add('highlight-winner'); // Use generic custom class
+                        playerHeaderCells[index].classList.add('highlight-winner'); // Use generic custom class
                     }
                     if (total === lowestScore) {
-                        td.classList.add('bg-red-200', 'dark:bg-red-700');
-                        playerHeaderCells[index].classList.add('bg-red-200', 'dark:bg-red-700');
+                        td.classList.add('highlight-loser'); // Use generic custom class
+                        playerHeaderCells[index].classList.add('highlight-loser'); // Use generic custom class
                     }
                 }
                 totalsRow.appendChild(td);
@@ -1096,6 +1098,9 @@
             const tableContainer = document.querySelector('.table-container');
             const scoreTableElement = document.getElementById('scoreTable');
 
+            // Determine the current background color based on the active theme
+            const currentBgColor = document.documentElement.classList.contains('dark') ? '#1a202c' : '#f0f4f8';
+
             // Store original styles
             const originalMaxHeight = tableContainer.style.maxHeight;
             const originalOverflow = tableContainer.style.overflow;
@@ -1109,18 +1114,18 @@
             const topButtonsContainer = scoreboardElement.querySelector('.flex.flex-wrap.justify-center.gap-x-4.gap-y-2.mb-6');
             const bottomButtonsContainer = scoreboardElement.querySelector('.flex.flex-wrap.justify-center.gap-x-4.gap-y-2.mt-6');
 
-            const originalDisplayTopButtons = topButtonsContainer.style.display;
-            const originalDisplayBottomButtons = bottomButtonsContainer.style.display;
+            const originalDisplayTopButtons = topButtonsContainer ? topButtonsContainer.style.display : '';
+            const originalDisplayBottomButtons = bottomButtonsContainer ? bottomButtonsContainer.style.display : '';
 
-            topButtonsContainer.style.display = 'none';
-            bottomButtonsContainer.style.display = 'none';
+            if (topButtonsContainer) topButtonsContainer.style.display = 'none';
+            if (bottomButtonsContainer) bottomButtonsContainer.style.display = 'none';
 
 
             html2canvas(scoreTableElement, { // Target the actual table element
                 scale: 2, // Increase scale for higher clarity
                 useCORS: true, // Required if any images are loaded from external domains
                 logging: false, // Disable logging for cleaner console
-                backgroundColor: '#ffffff', // Set background to white for better visibility
+                backgroundColor: currentBgColor, // Set background dynamically based on theme
                 // Set width and height to capture the full scrollable content
                 width: scoreTableElement.scrollWidth,
                 height: scoreTableElement.scrollHeight,
@@ -1130,8 +1135,8 @@
                 tableContainer.style.overflow = originalOverflow;
 
                 // Restore hidden elements
-                topButtonsContainer.style.display = originalDisplayTopButtons;
-                bottomButtonsContainer.style.display = originalDisplayBottomButtons;
+                if (topButtonsContainer) topButtonsContainer.style.display = originalDisplayTopButtons;
+                if (bottomButtonsContainer) bottomButtonsContainer.style.display = originalDisplayBottomButtons;
 
                 screenshotLoadingModal.style.display = 'none'; // Hide loading modal
 
@@ -1145,7 +1150,7 @@
                 link.download = `Score_${day}-${month}-${year}_${hours}${minutes}.png`;
                 link.href = canvas.toDataURL('image/png');
                 document.body.appendChild(link);
-                link.click();
+                link.click(); // Programmatically click the link to trigger download
                 document.body.removeChild(link);
             }).catch(error => {
                 console.error("Error generating screenshot:", error);
@@ -1154,8 +1159,8 @@
                 tableContainer.style.overflow = originalOverflow;
 
                 // Restore hidden elements even on error
-                topButtonsContainer.style.display = originalDisplayTopButtons;
-                bottomButtonsContainer.style.display = originalDisplayBottomButtons;
+                if (topButtonsContainer) topButtonsContainer.style.display = originalDisplayTopButtons;
+                if (bottomButtonsContainer) bottomButtonsContainer.style.display = originalDisplayBottomButtons;
 
                 screenshotLoadingModal.style.display = 'none'; // Hide loading modal
             });
@@ -1297,6 +1302,17 @@
             }
         });
 
+        // Function to update the icon based on the theme
+        function updateDarkModeIcon() {
+            if (document.documentElement.classList.contains('dark')) {
+                darkModeIcon.classList.remove('fa-sun');
+                darkModeIcon.classList.add('fa-moon');
+            } else {
+                darkModeIcon.classList.remove('fa-moon');
+                darkModeIcon.classList.add('fa-sun');
+            }
+        }
+
         // Dark Mode Toggle
         darkModeToggle.addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
@@ -1307,6 +1323,8 @@
             } else {
                 localStorage.setItem('theme', 'light');
             }
+            // Update the icon to reflect the new theme
+            updateDarkModeIcon();
             // Re-render scoreboard to apply correct highlighting colors based on theme
             if (document.getElementById('scoreboardScreen').classList.contains('hidden') === false) {
                  updateTotals();
@@ -1317,15 +1335,23 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadGameState();
 
-            // Apply saved theme preference
+            // Apply saved theme preference or detect system preference
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
                 document.documentElement.classList.remove('light', 'dark');
                 document.documentElement.classList.add(savedTheme);
             } else {
-                // Default to light if no theme saved
-                document.documentElement.classList.add('light');
+                // If no theme saved, detect system preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                }
             }
+            // Set the initial icon based on the loaded/detected theme
+            updateDarkModeIcon();
 
             if (gameState.playerCount > 0 && gameState.playerNames.length === gameState.playerCount) {
                 renderScoreboard();
