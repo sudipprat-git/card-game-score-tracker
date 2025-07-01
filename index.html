@@ -117,9 +117,9 @@
             transform: translateX(-50%);
             opacity: 0;
             transition: opacity 0.3s;
-            white-space: nowrap;
             font-size: 0.875rem;
             pointer-events: none; /* Allows clicks to pass through to elements behind if tooltip is not active */
+            max-width: 200px; /* Added max-width to prevent excessive width */
         }
 
         /* New class for active tooltips (for touch devices) */
@@ -269,6 +269,76 @@
         #winnerResults span {
             display: inline-block; /* Essential for transform animations */
         }
+
+        /* New styles for active input and header highlight */
+        .highlight-input {
+            background-color: rgba(60, 150, 255, 0.1); /* Light blue highlight */
+            border-color: #3b82f6; /* Blue border */
+        }
+        .dark .highlight-input {
+            background-color: rgba(59, 130, 246, 0.2); /* Darker blue highlight */
+        }
+        .highlight-player-header {
+            background-color: #bfdbfe; /* Light blue for header */
+        }
+        .dark .highlight-player-header {
+            background-color: #1e3a8a; /* Darker blue for header */
+        }
+
+        /* Score change animation */
+        @keyframes scoreChangeFade {
+            0% { background-color: #a7f3d0; } /* Light green for change */
+            100% { background-color: transparent; }
+        }
+        .dark @keyframes scoreChangeFade {
+            0% { background-color: #065f46; } /* Dark green for change */
+            100% { background-color: transparent; }
+        }
+        .score-changed {
+            animation: scoreChangeFade 0.5s ease-out;
+        }
+
+        /* Screenshot loading modal specific styles */
+        #screenshotLoadingModal .modal-content {
+            padding: 40px; /* More padding for a larger spinner */
+            max-width: 300px;
+        }
+
+        /* Shake animation for error message */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .shake-animation {
+            animation: shake 0.5s;
+        }
+
+        /* Edit icon styling */
+        .edit-icon {
+            margin-left: 8px; /* Space between round number and icon */
+            cursor: pointer;
+            color: #6b7280; /* Gray color */
+            transition: color 0.2s ease-in-out;
+        }
+        .edit-icon:hover {
+            color: #3b82f6; /* Blue on hover */
+        }
+        .dark .edit-icon {
+            color: #9ca3af;
+        }
+        .dark .edit-icon:hover {
+            color: #60a5fa;
+        }
+
+        /* Style for the latest round's edit icon (always unlocked) */
+        .edit-icon.latest-round-active {
+            color: #3b82f6; /* Blue color for active */
+        }
+        .dark .edit-icon.latest-round-active {
+            color: #60a5fa; /* Lighter blue for active in dark mode */
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-8 px-4 transition-colors duration-300">
@@ -290,14 +360,16 @@
                        class="w-full md:w-1/2 p-3 border border-input rounded-md text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
                 <p id="playerCountError" class="text-red-500 text-sm mt-2 hidden">Please enter a number between 2 and 10.</p>
             </div>
-            <div class="flex justify-center">
-                <button id="nextToPlayerNames"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group">
-                    Next <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="nextToPlayerNamesTooltip"></i>
-                    <span class="tooltip-text" id="nextToPlayerNamesTooltip">Proceed to enter player names.</span>
+            <div class="flex justify-center items-center">
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
+                    <button id="nextToPlayerNames"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
+                        Next <i class="fas fa-arrow-right ml-2 group-scope-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="nextToPlayerNamesTooltip"></i>
+                        <span class="tooltip-text" id="nextToPlayerNamesTooltip">Proceed to enter player names.</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -309,23 +381,27 @@
                 <!-- Player name inputs will be dynamically inserted here -->
             </div>
             <p id="playerNamesError" class="text-red-500 text-sm mt-2 hidden text-center">Please enter names for all players.</p>
-            <div class="flex justify-center gap-4">
-                <button id="backToPlayerCount"
-                        class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group">
-                    <i class="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i> Back
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="backToPlayerCountTooltip"></i>
-                    <span class="tooltip-text" id="backToPlayerCountTooltip">Go back to change number of players.</span>
+            <div class="flex justify-center gap-4 items-center">
+                <div id="backToPlayerCountGroup" class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-gray-300/50 dark:group-hover:bg-gray-700/50">
+                    <button id="backToPlayerCount"
+                            class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
+                        <i class="fas fa-arrow-left mr-2 group-scope-hover:-translate-x-1 transition-transform"></i> Back
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="backToPlayerCountTooltip"></i>
+                        <span class="tooltip-text" id="backToPlayerCountTooltip">Go back to change number of players.</span>
+                    </div>
                 </div>
 
-                <button id="confirmPlayerNames"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group">
-                    <span id="confirmPlayerNamesText">Start Game</span> <i class="fas fa-play ml-2 group-hover:scale-110 transition-transform"></i>
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="confirmPlayerNamesTooltip"></i>
-                    <span class="tooltip-text" id="confirmPlayerNamesTooltip">Start the game with these players.</span>
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
+                    <button id="confirmPlayerNames"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
+                        <span id="confirmPlayerNamesText">Start Game</span> <i class="fas fa-play ml-2 group-scope-hover:scale-110 transition-transform"></i>
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="confirmPlayerNamesTooltip"></i>
+                        <span class="tooltip-text" id="confirmPlayerNamesTooltip">Start the game with these players.</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -334,23 +410,27 @@
         <div id="scoreboardScreen" class="space-y-6">
             <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6">Scoreboard</h2>
 
-            <div class="flex flex-wrap justify-center gap-4 mb-6">
-                <button id="editPlayerNames"
-                        class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
-                    <i class="fas fa-user-edit mr-2 group-hover:rotate-6 transition-transform"></i> Edit Player Names
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="editPlayerNamesTooltip"></i>
-                    <span class="tooltip-text" id="editPlayerNamesTooltip">Edit player names without losing scores.</span>
+            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-6 items-center">
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-purple-500/10 dark:group-hover:bg-purple-500/20">
+                    <button id="editPlayerNames"
+                            class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-user-edit mr-2 group-scope-hover:rotate-6 transition-transform"></i> Edit Player Names
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="editPlayerNamesTooltip"></i>
+                        <span class="tooltip-text" id="editPlayerNamesTooltip">Edit player names without losing scores.</span>
+                    </div>
                 </div>
 
-                <button id="screenshotBtn"
-                        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
-                    <i class="fas fa-camera mr-2 group-hover:scale-110 transition-transform"></i> Screenshot
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="screenshotBtnTooltip"></i>
-                    <span class="tooltip-text" id="screenshotBtnTooltip">Generate a screenshot of the scoreboard.</span>
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-green-500/10 dark:group-hover:bg-green-500/20">
+                    <button id="screenshotBtn"
+                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-camera mr-2 group-scope-hover:scale-110 transition-transform"></i> Screenshot
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="screenshotBtnTooltip"></i>
+                        <span class="tooltip-text" id="screenshotBtnTooltip">Generate a screenshot of the scoreboard.</span>
+                    </div>
                 </div>
             </div>
 
@@ -368,50 +448,60 @@
                 </table>
             </div>
 
-            <div class="flex flex-wrap justify-center gap-4 mt-6">
-                <button id="addRoundBtn"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
-                    <i class="fas fa-plus-circle mr-2 group-hover:rotate-6 transition-transform"></i> Add Round
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="addRoundTooltip"></i>
-                    <span class="tooltip-text" id="addRoundTooltip">Add a new round to the scoreboard.</span>
+            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 items-center">
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
+                    <button id="addRoundBtn"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-plus-circle mr-2 group-scope-hover:rotate-6 transition-transform"></i> Add Round
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="addRoundTooltip"></i>
+                        <span class="tooltip-text" id="addRoundTooltip">Add a new round to the scoreboard.</span>
+                    </div>
                 </div>
 
-                <button id="hideShowRoundsBtn"
-                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
-                    <i class="fas fa-eye-slash mr-2 group-hover:scale-110 transition-transform"></i> <span id="hideShowRoundsText">Hide Old Rounds</span>
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="hideShowRoundsTooltip"></i>
-                    <span class="tooltip-text" id="hideShowRoundsTooltip">Toggle visibility of old rounds (show last 3).</span>
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-yellow-500/10 dark:group-hover:bg-yellow-500/20">
+                    <button id="hideShowRoundsBtn"
+                            class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-eye-slash mr-2 group-scope-hover:scale-110 transition-transform"></i> <span id="hideShowRoundsText">Hide Old Rounds</span>
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="hideShowRoundsTooltip"></i>
+                        <span class="tooltip-text" id="hideShowRoundsTooltip">Toggle visibility of old rounds (show last 3).</span>
+                    </div>
                 </div>
 
-                <button id="clearScoresBtn"
-                        class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
-                    <i class="fas fa-eraser mr-2 group-hover:rotate-6 transition-transform"></i> Clear Scores
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="clearScoresTooltip"></i>
-                    <span class="tooltip-text" id="clearScoresTooltip">Clear all scores and start a new game with current players.</span>
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-orange-500/10 dark:group-hover:bg-orange-500/20">
+                    <button id="clearScoresBtn"
+                            class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-eraser mr-2 group-scope-hover:rotate-6 transition-transform"></i> Clear Scores
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="clearScoresTooltip"></i>
+                        <span class="tooltip-text" id="clearScoresTooltip">Clear all scores and start a new game with current players.</span>
+                    </div>
                 </div>
 
-                <button id="endGameBtn"
-                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base" disabled>
-                    <i class="fas fa-trophy mr-2 group-hover:scale-110 transition-transform"></i> End Game & Declare Winners
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="endGameTooltip"></i>
-                    <span class="tooltip-text" id="endGameTooltip">Declare winners (requires at least 15 rounds).</span>
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-red-500/10 dark:group-hover:bg-red-500/20">
+                    <button id="endGameBtn"
+                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base" disabled>
+                        <i class="fas fa-trophy mr-2 group-scope-hover:scale-110 transition-transform"></i> End Game & Declare Winners
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="endGameTooltip"></i>
+                        <span class="tooltip-text" id="endGameTooltip">Declare winners (requires at least 15 rounds).</span>
+                    </div>
                 </div>
 
-                <button id="resetGameBtn"
-                        class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
-                    <i class="fas fa-redo mr-2 group-hover:rotate-180 transition-transform"></i> Reset Game
-                </button>
-                <div class="tooltip-container ml-2">
-                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="resetGameTooltip"></i>
-                    <span class="tooltip-text" id="resetGameTooltip">Clear all data and restart the game from scratch.</span>
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-gray-500/10 dark:group-hover:bg-gray-500/20">
+                    <button id="resetGameBtn"
+                            class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-redo mr-2 group-scope-hover:rotate-180 transition-transform"></i> Reset Game
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="resetGameTooltip"></i>
+                        <span class="tooltip-text" id="resetGameTooltip">Clear all data and restart the game from scratch.</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -456,6 +546,14 @@
         </div>
     </div>
 
+    <!-- Screenshot Loading Modal -->
+    <div id="screenshotLoadingModal" class="modal">
+        <div class="modal-content text-center p-8">
+            <i class="fas fa-spinner fa-spin text-5xl text-blue-500 mb-4"></i>
+            <p class="text-xl font-semibold">Generating screenshot...</p>
+        </div>
+    </div>
+
     <!-- html2canvas CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -469,6 +567,8 @@
 
         // Flag to track if we are in player name editing mode
         let isEditingPlayerNames = false;
+        // Track which round is currently being edited (null if none)
+        let currentlyEditingRoundIndex = null;
 
         // DOM Elements
         const playerCountScreen = document.getElementById('playerCountScreen');
@@ -480,7 +580,8 @@
         const playerInputsContainer = document.getElementById('playerInputsContainer');
         const playerNamesError = document.getElementById('playerNamesError');
         const backToPlayerCountBtn = document.getElementById('backToPlayerCount');
-        const confirmPlayerNamesBtn = document.getElementById('confirmPlayerNames'); // Renamed from startNewGame
+        const backToPlayerCountGroup = document.getElementById('backToPlayerCountGroup'); // New: reference to the group div
+        const confirmPlayerNamesBtn = document.getElementById('confirmPlayerNames');
         const confirmPlayerNamesText = document.getElementById('confirmPlayerNamesText');
         const confirmPlayerNamesTooltip = document.getElementById('confirmPlayerNamesTooltip');
 
@@ -494,8 +595,8 @@
         const clearScoresBtn = document.getElementById('clearScoresBtn');
         const resetGameBtn = document.getElementById('resetGameBtn');
         const hideShowRoundsBtn = document.getElementById('hideShowRoundsBtn');
-        const hideShowRoundsText = document.getElementById('hideShowRoundsText'); // New element for text
-        const hideShowRoundsTooltip = document.getElementById('hideShowRoundsTooltip'); // New element for tooltip
+        const hideShowRoundsText = document.getElementById('hideShowRoundsText');
+        const hideShowRoundsTooltip = document.getElementById('hideShowRoundsTooltip');
         const endGameBtn = document.getElementById('endGameBtn');
 
         const winnerModal = document.getElementById('winnerModal');
@@ -510,6 +611,8 @@
         const confirmationModalMessage = document.getElementById('confirmationModalMessage');
         const confirmActionButton = document.getElementById('confirmActionButton');
         const cancelActionButton = document.getElementById('cancelActionButton');
+
+        const screenshotLoadingModal = document.getElementById('screenshotLoadingModal');
 
         const darkModeToggle = document.getElementById('darkModeToggle');
 
@@ -547,15 +650,15 @@
 
             // Adjust button visibility and text based on editing mode
             if (isEditingPlayerNames) {
-                backToPlayerCountBtn.classList.add('hidden');
+                backToPlayerCountGroup.classList.add('hidden'); // Hide the entire group
                 confirmPlayerNamesText.textContent = 'Save Changes';
                 confirmPlayerNamesTooltip.textContent = 'Save changes to player names.';
-                confirmPlayerNamesBtn.querySelector('i').className = 'fas fa-save ml-2 group-hover:scale-110 transition-transform';
+                confirmPlayerNamesBtn.querySelector('i').className = 'fas fa-save ml-2 group-scope-hover:scale-110 transition-transform';
             } else {
-                backToPlayerCountBtn.classList.remove('hidden');
+                backToPlayerCountGroup.classList.remove('hidden'); // Show the entire group
                 confirmPlayerNamesText.textContent = 'Start Game';
                 confirmPlayerNamesTooltip.textContent = 'Start the game with these players.';
-                confirmPlayerNamesBtn.querySelector('i').className = 'fas fa-play ml-2 group-hover:scale-110 transition-transform';
+                confirmPlayerNamesBtn.querySelector('i').className = 'fas fa-play ml-2 group-scope-hover:scale-110 transition-transform';
             }
 
             for (let i = 0; i < gameState.playerCount; i++) {
@@ -572,15 +675,19 @@
         }
 
         function renderScoreboard() {
+            // Reset currently editing state when re-rendering scoreboard
+            currentlyEditingRoundIndex = null;
+
             // Clear previous table content
             scoreTable.querySelector('thead tr').innerHTML = '<th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg">Round</th>';
             scoreTableBody.innerHTML = '';
 
             // Add player names to header
-            gameState.playerNames.forEach(name => {
+            gameState.playerNames.forEach((name, index) => {
                 const th = document.createElement('th');
                 th.className = 'p-3 border-r border-gray-300 dark:border-gray-600 text-center';
                 th.textContent = name;
+                th.dataset.playerIndex = index; // Store player index for highlighting
                 scoreTable.querySelector('thead tr').appendChild(th);
             });
             // Add rounded top-right corner to the last player name header
@@ -595,6 +702,11 @@
             updateTotals();
             checkEndGameEligibility();
             showScreen('scoreboardScreen');
+
+            // Apply hide/show state after rendering if rounds are supposed to be hidden
+            if (roundsHidden) {
+                applyHideShowRoundsState();
+            }
         }
 
         // --- Scoreboard Functions ---
@@ -603,27 +715,91 @@
             tr.className = 'border-t border-gray-200 dark:border-gray-700';
             tr.dataset.roundIndex = roundNumber - 1; // Store round index for easy access
 
-            // Round number cell
+            // Determine if this is the latest round (0-indexed comparison)
+            const isLatestRound = (roundNumber - 1) === (gameState.rounds.length - 1);
+
             const roundNumTd = document.createElement('td');
-            roundNumTd.className = 'p-3 border-r border-gray-200 dark:border-gray-700 font-semibold sticky-first-col';
-            roundNumTd.textContent = `Round ${roundNumber}`;
+            roundNumTd.className = 'p-3 border-r border-gray-200 dark:border-gray-700 font-semibold sticky-first-col flex items-center justify-between';
+            
+            // Conditionally add 'latest-round-active' class for the latest round's icon
+            const iconClass = isLatestRound ? 'fas fa-pencil-alt edit-icon text-base latest-round-active' : 'fas fa-pencil-alt edit-icon text-base';
+
+            roundNumTd.innerHTML = `
+                <span>${roundNumber}</span>
+                <i class="${iconClass}" data-round-index="${roundNumber - 1}" aria-label="Edit Round ${roundNumber} Scores"></i>
+            `;
             tr.appendChild(roundNumTd);
 
             // Score input cells
             for (let i = 0; i < gameState.playerCount; i++) {
                 const td = document.createElement('td');
-                td.className = 'p-1 border-r border-gray-200 dark:border-gray-700 text-center';
+                td.className = 'p-2 border-r border-gray-200 dark:border-gray-700 text-center';
                 const input = document.createElement('input');
                 input.type = 'number';
                 input.value = scores[i] !== undefined ? scores[i] : 0;
                 input.className = 'w-full p-2 rounded-md bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 text-center';
                 input.dataset.playerIndex = i;
                 input.addEventListener('input', handleScoreInput);
+                input.addEventListener('focus', handleInputFocus);
+                input.addEventListener('blur', handleInputBlur);
+
+                // Inputs are enabled ONLY if it's the current absolute last round OR if it's the currently editing round
+                input.disabled = !isLatestRound && (currentlyEditingRoundIndex !== (roundNumber - 1));
+                
                 td.appendChild(input);
                 tr.appendChild(td);
             }
             scoreTableBody.appendChild(tr);
+
+            const editIcon = roundNumTd.querySelector('.edit-icon');
+            if (editIcon) {
+                // Only add click listener for non-latest rounds, as latest round is always editable
+                if (!isLatestRound) {
+                    editIcon.addEventListener('click', handleEditRoundClick);
+                }
+            }
         }
+
+        function handleEditRoundClick(event) {
+            const clickedIcon = event.currentTarget;
+            const roundIndexToEdit = parseInt(clickedIcon.dataset.roundIndex);
+            const targetRow = clickedIcon.closest('tr');
+            const inputsInTargetRow = targetRow.querySelectorAll('input[type="number"]');
+
+            // If the clicked round is the latest round, do nothing as it's always editable
+            if (roundIndexToEdit === gameState.rounds.length - 1) {
+                return;
+            }
+
+            if (currentlyEditingRoundIndex !== null && currentlyEditingRoundIndex !== roundIndexToEdit) {
+                // Another row is currently being edited, lock it first
+                const previousEditRow = scoreTableBody.querySelector(`tr[data-round-index="${currentlyEditingRoundIndex}"]`);
+                if (previousEditRow) {
+                    const inputsInPreviousRow = previousEditRow.querySelectorAll('input[type="number"]');
+                    inputsInPreviousRow.forEach(input => input.disabled = true);
+                    const previousEditIcon = previousEditRow.querySelector('.edit-icon');
+                    if (previousEditIcon) {
+                        previousEditIcon.classList.remove('fa-check');
+                        previousEditIcon.classList.add('fa-pencil-alt');
+                    }
+                }
+            }
+
+            if (currentlyEditingRoundIndex === roundIndexToEdit) {
+                // If clicking on the same row that's already being edited, lock it
+                inputsInTargetRow.forEach(input => input.disabled = true);
+                clickedIcon.classList.remove('fa-check');
+                clickedIcon.classList.add('fa-pencil-alt');
+                currentlyEditingRoundIndex = null;
+            } else {
+                // Unlock the clicked row
+                inputsInTargetRow.forEach(input => input.disabled = false);
+                clickedIcon.classList.remove('fa-pencil-alt');
+                clickedIcon.classList.add('fa-check');
+                currentlyEditingRoundIndex = roundIndexToEdit;
+            }
+        }
+
 
         function handleScoreInput(event) {
             const input = event.target;
@@ -637,6 +813,36 @@
             gameState.rounds[roundIndex][playerIndex] = score;
             saveGameState();
             updateTotals();
+
+            // Visual feedback for score change
+            input.classList.remove('score-changed'); // Remove to re-trigger animation if already present
+            void input.offsetWidth; // Trigger reflow
+            input.classList.add('score-changed');
+            setTimeout(() => {
+                input.classList.remove('score-changed');
+            }, 500); // Remove class after animation duration
+        }
+
+        function handleInputFocus(event) {
+            const input = event.target;
+            const playerIndex = parseInt(input.dataset.playerIndex);
+            const playerHeader = scoreTable.querySelector(`thead th[data-player-index="${playerIndex}"]`);
+
+            input.classList.add('highlight-input');
+            if (playerHeader) {
+                playerHeader.classList.add('highlight-player-header');
+            }
+        }
+
+        function handleInputBlur(event) {
+            const input = event.target;
+            const playerIndex = parseInt(input.dataset.playerIndex);
+            const playerHeader = scoreTable.querySelector(`thead th[data-player-index="${playerIndex}"]`);
+
+            input.classList.remove('highlight-input');
+            if (playerHeader) {
+                playerHeader.classList.remove('highlight-player-header');
+            }
         }
 
         function updateTotals() {
@@ -809,7 +1015,7 @@
             renderPlayerCountScreen();
         });
 
-        confirmPlayerNamesBtn.addEventListener('click', () => { // Changed from startNewGameBtn
+        confirmPlayerNamesBtn.addEventListener('click', () => {
             const playerInputs = playerInputsContainer.querySelectorAll('input[type="text"]');
             let allNamesEntered = true;
             playerInputs.forEach((input, index) => {
@@ -822,8 +1028,12 @@
 
             if (!allNamesEntered) {
                 playerNamesError.classList.remove('hidden');
+                playerNamesError.classList.remove('shake-animation'); // Remove to re-trigger
+                void playerNamesError.offsetWidth; // Trigger reflow
+                playerNamesError.classList.add('shake-animation');
             } else {
                 playerNamesError.classList.add('hidden');
+                playerNamesError.classList.remove('shake-animation'); // Ensure it's clean if successful
 
                 if (isEditingPlayerNames) {
                     // If in editing mode, just save and go back to scoreboard
@@ -845,10 +1055,30 @@
         });
 
         addRoundBtn.addEventListener('click', () => {
+            // Before adding a new round, ensure the previous last round is locked and its icon reset
+            if (gameState.rounds.length > 0) {
+                const previousLastRoundIndex = gameState.rounds.length - 1;
+                const previousLastRoundRow = scoreTableBody.querySelector(`tr[data-round-index="${previousLastRoundIndex}"]`);
+                if (previousLastRoundRow) {
+                    const inputsInPreviousLastRow = previousLastRoundRow.querySelectorAll('input[type="number"]');
+                    inputsInPreviousLastRow.forEach(input => input.disabled = true); // Lock inputs
+                    const previousLastRoundEditIcon = previousLastRoundRow.querySelector('.edit-icon');
+                    if (previousLastRoundEditIcon) {
+                        previousLastRoundEditIcon.classList.remove('fa-check');
+                        previousLastRoundEditIcon.classList.add('fa-pencil-alt');
+                        previousLastRoundEditIcon.classList.remove('latest-round-active'); // Remove active style
+                        // Ensure the click listener is added for toggling previous rounds
+                        previousLastRoundEditIcon.removeEventListener('click', handleEditRoundClick); // Defensive remove
+                        previousLastRoundEditIcon.addEventListener('click', handleEditRoundClick);
+                    }
+                }
+            }
+
             const newRoundScores = new Array(gameState.playerCount).fill(0);
             gameState.rounds.push(newRoundScores);
             saveGameState();
-            addRoundRow(newRoundScores, gameState.rounds.length);
+            // Re-render the entire scoreboard to ensure all states are correctly applied
+            renderScoreboard();
             updateTotals();
             checkEndGameEligibility();
             // Scroll to the bottom to show the new round
@@ -861,6 +1091,8 @@
         });
 
         screenshotBtn.addEventListener('click', () => {
+            screenshotLoadingModal.style.display = 'flex'; // Show loading modal
+
             const tableContainer = document.querySelector('.table-container');
             const scoreTableElement = document.getElementById('scoreTable');
 
@@ -874,13 +1106,15 @@
 
             // Temporarily hide buttons and other elements not part of the table for a cleaner screenshot
             const scoreboardElement = document.getElementById('scoreboardScreen');
-            const buttonsContainer = scoreboardElement.querySelector('.flex.flex-wrap.justify-center.gap-4.mb-6');
-            const bottomButtonsContainer = scoreboardElement.querySelector('.flex.flex-wrap.justify-center.gap-4.mt-6');
-            const originalDisplayButtonsContainer = buttonsContainer.style.display;
-            const originalDisplayBottomButtonsContainer = bottomButtonsContainer.style.display;
+            const topButtonsContainer = scoreboardElement.querySelector('.flex.flex-wrap.justify-center.gap-x-4.gap-y-2.mb-6');
+            const bottomButtonsContainer = scoreboardElement.querySelector('.flex.flex-wrap.justify-center.gap-x-4.gap-y-2.mt-6');
 
-            buttonsContainer.style.display = 'none';
+            const originalDisplayTopButtons = topButtonsContainer.style.display;
+            const originalDisplayBottomButtons = bottomButtonsContainer.style.display;
+
+            topButtonsContainer.style.display = 'none';
             bottomButtonsContainer.style.display = 'none';
+
 
             html2canvas(scoreTableElement, { // Target the actual table element
                 scale: 2, // Increase scale for higher clarity
@@ -896,8 +1130,10 @@
                 tableContainer.style.overflow = originalOverflow;
 
                 // Restore hidden elements
-                buttonsContainer.style.display = originalDisplayButtonsContainer;
-                bottomButtonsContainer.style.display = originalDisplayBottomButtonsContainer;
+                topButtonsContainer.style.display = originalDisplayTopButtons;
+                bottomButtonsContainer.style.display = originalDisplayBottomButtons;
+
+                screenshotLoadingModal.style.display = 'none'; // Hide loading modal
 
                 const link = document.createElement('a');
                 const now = new Date();
@@ -918,8 +1154,10 @@
                 tableContainer.style.overflow = originalOverflow;
 
                 // Restore hidden elements even on error
-                buttonsContainer.style.display = originalDisplayButtonsContainer;
-                bottomButtonsContainer.style.display = originalDisplayBottomButtonsContainer;
+                topButtonsContainer.style.display = originalDisplayTopButtons;
+                bottomButtonsContainer.style.display = originalDisplayBottomButtons;
+
+                screenshotLoadingModal.style.display = 'none'; // Hide loading modal
             });
         });
 
@@ -952,29 +1190,36 @@
             );
         });
 
-        let roundsHidden = false;
-        hideShowRoundsBtn.addEventListener('click', () => {
+        let roundsHidden = false; // State variable to track if rounds are hidden
+
+        function applyHideShowRoundsState() {
             const allRoundRows = Array.from(scoreTableBody.querySelectorAll('tr:not(#totalsRow)'));
             const numRounds = allRoundRows.length;
 
-            if (!roundsHidden) {
+            if (roundsHidden) {
                 // Hide all except the last 3
-                for (let i = 0; i < numRounds - 3; i++) {
-                    if (allRoundRows[i]) {
-                        allRoundRows[i].classList.add('hidden');
+                allRoundRows.forEach((row, index) => {
+                    if (index < numRounds - 3) {
+                        row.classList.add('hidden');
+                    } else {
+                        row.classList.remove('hidden'); // Ensure last 3 are visible
                     }
-                }
+                });
                 hideShowRoundsText.textContent = 'Show All Rounds';
-                hideShowRoundsBtn.querySelector('i').className = 'fas fa-eye mr-2 group-hover:scale-110 transition-transform';
+                hideShowRoundsBtn.querySelector('i').className = 'fas fa-eye mr-2 group-scope-hover:scale-110 transition-transform';
                 hideShowRoundsTooltip.textContent = 'Show all hidden rounds.';
             } else {
                 // Show all
                 allRoundRows.forEach(row => row.classList.remove('hidden'));
                 hideShowRoundsText.textContent = 'Hide Old Rounds';
-                hideShowRoundsBtn.querySelector('i').className = 'fas fa-eye-slash mr-2 group-hover:scale-110 transition-transform';
+                hideShowRoundsBtn.querySelector('i').className = 'fas fa-eye-slash mr-2 group-scope-hover:scale-110 transition-transform';
                 hideShowRoundsTooltip.textContent = 'Toggle visibility of old rounds (show last 3).';
             }
-            roundsHidden = !roundsHidden;
+        }
+
+        hideShowRoundsBtn.addEventListener('click', () => {
+            roundsHidden = !roundsHidden; // Toggle the state
+            applyHideShowRoundsState(); // Apply the new state
         });
 
         endGameBtn.addEventListener('click', () => {
