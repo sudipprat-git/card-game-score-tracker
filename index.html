@@ -1,428 +1,1095 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-white text-black dark:bg-gray-900 dark:text-white">
+<html lang="en" class="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Card Game Score Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-  <style>
-    /* Custom style to make the first column sticky */
-    .sticky-col {
-      position: -webkit-sticky;
-      position: sticky;
-      left: 0;
-      z-index: 10;
-    }
-    .dark .sticky-col {
-        background-color: #1f2937; /* Corresponds to dark:bg-gray-800 */
-    }
-    .sticky-col {
-        background-color: #f3f4f6; /* Corresponds to bg-gray-100 */
-    }
-
-    tfoot .sticky-col {
-        background-color: #e5e7eb; /* Corresponds to bg-gray-200 */
-    }
-
-    .dark tfoot .sticky-col {
-        background-color: #374151; /* Corresponds to dark:bg-gray-700 */
-    }
-
-    thead .sticky-col {
-        background-color: #e5e7eb; /* Corresponds to bg-gray-200 */
-    }
-    .dark thead .sticky-col {
-        background-color: #374151; /* Corresponds to dark:bg-gray-700 */
-    }
-  </style>
-</head>
-<body class="p-4 max-w-4xl mx-auto">
-  <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-    <h1 class="text-3xl font-bold text-center">Card Game Score Tracker</h1>
-    <div id="headerActions" class="flex gap-2 hidden">
-      <button onclick="editPlayers()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow-md hover:bg-yellow-600 transition-colors">Edit Players</button>
-      <button onclick="takeScreenshot()" class="px-4 py-2 bg-indigo-500 text-white rounded-lg shadow-md hover:bg-indigo-600 transition-colors">Screenshot</button>
-    </div>
-  </div>
-
-  <div id="playerInput" class="mb-4 text-center">
-    <label for="numPlayers" class="block mb-2 font-semibold">Number of Players:</label>
-    <input type="number" id="numPlayers" min="2" max="10" class="border p-2 w-32 rounded-lg" />
-    <button onclick="setupPlayers()" class="ml-2 px-4 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-green-600 transition-colors">Next</button>
-  </div>
-
-  <div id="nameInput" class="hidden mb-4">
-    <h3 class="text-xl font-semibold mb-4 text-center">Enter Player Names</h3>
-    <div id="nameFields" class="mb-4 flex flex-col gap-2 items-center"></div>
-    <button id="startGameBtn" onclick="createScoreTable()" class="w-full max-w-xs mx-auto block px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-colors">Start Game</button>
-  </div>
-
-  <div id="scoreBoard" class="hidden">
-    <div class="overflow-x-auto rounded-lg shadow-lg">
-      <table class="table-auto border-collapse w-full" id="scoreTable">
-        <thead class="sticky top-0 bg-gray-200 dark:bg-gray-700 z-20">
-          <tr id="headerRow" class="border-b-2 border-gray-300 dark:border-gray-600">
-            <th class="border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col">Round</th>
-          </tr>
-        </thead>
-        <tbody id="scoreBody"></tbody>
-        <tfoot class="sticky bottom-0 bg-gray-200 dark:bg-gray-700 z-20">
-          <tr id="totalRow" class="border-t-2 border-gray-300 dark:border-gray-600 font-bold">
-            <th class="border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col">Total</th>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-    <div class="mt-6 flex flex-wrap justify-center gap-3">
-      <button onclick="addScoreRow()" class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition-colors">Add Round</button>
-      <button onclick="toggleOldRounds(this)" class="px-4 py-2 bg-purple-500 text-white rounded-lg shadow-md hover:bg-purple-600 transition-colors">Hide Old Rounds</button>
-      <button onclick="clearOnlyScores()" class="px-4 py-2 bg-orange-500 text-white rounded-lg shadow-md hover:bg-orange-600 transition-colors">Clear Scores</button>
-      <button onclick="endGame()" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-colors">End Game & Declare Winner</button>
-      <button onclick="clearScores()" class="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition-colors">Reset Game</button>
-    </div>
-  </div>
-
-  <div id="winnerModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md text-center transform transition-all scale-95 opacity-0" id="modalContent">
-      <h2 class="text-4xl font-bold mb-4">🎉 Game Over! 🎉</h2>
-      <div id="winnerList" class="space-y-4 text-left"></div>
-      <div class="mt-8 flex gap-4 justify-center">
-          <button onclick="closeModal()" class="px-6 py-2 bg-gray-500 text-white rounded-lg shadow-md hover:bg-gray-600 transition-transform hover:scale-105">Close</button>
-          <button onclick="clearScores()" class="px-6 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition-transform hover:scale-105">Play Again</button>
-      </div>
-    </div>
-  </div>
-
-
-  <script>
-    let playerNames = [];
-    let round = 0;
-    let showingOldRounds = true;
-
-    function setupPlayers() {
-      const numPlayersInput = document.getElementById('numPlayers');
-      const numPlayers = parseInt(numPlayersInput.value); // Parse to integer
-      if (numPlayers < 2 || numPlayers > 10) {
-        alert("Please enter a number of players between 2 and 10.");
-        return;
-      }
-
-      document.getElementById('playerInput').classList.add('hidden');
-      document.getElementById('nameInput').classList.remove('hidden');
-      document.getElementById('headerActions').classList.add('hidden'); // Hide buttons
-
-      const nameFields = document.getElementById('nameFields');
-      nameFields.innerHTML = ""; // Clear any existing input fields
-
-      for (let i = 0; i < numPlayers; i++) {
-        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-full max-w-xs rounded-lg dark:bg-gray-800" placeholder="Player ${i + 1} Name">`;
-      }
-      document.getElementById('startGameBtn').innerText = 'Start Game'; // Ensure button text is "Start Game"
-    }
-
-    function createScoreTable() {
-      const numPlayers = document.querySelectorAll('#nameFields input').length;
-      const newNames = [];
-
-      for (let i = 0; i < numPlayers; i++) {
-        const name = document.getElementById(`player${i}`).value.trim();
-        if (name === "") {
-          alert("Please enter all player names.");
-          return;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Game Score Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
-        newNames.push(name);
-      }
-
-      playerNames = newNames;
-      document.getElementById('numPlayers').value = playerNames.length;
-      document.getElementById('nameInput').classList.add('hidden');
-      document.getElementById('scoreBoard').classList.remove('hidden');
-      document.getElementById('headerActions').classList.remove('hidden'); // Show buttons
-
-      const headerRow = document.getElementById("headerRow");
-      const totalRow = document.getElementById("totalRow");
-      headerRow.innerHTML = "<th class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col'>Round</th>";
-      totalRow.innerHTML = "<th class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col'>Total</th>";
-
-      playerNames.forEach((name, index) => {
-        headerRow.innerHTML += `<th id="header${index}" class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 bg-gray-100 dark:bg-gray-800 transition-colors'>${name}</th>`;
-        totalRow.innerHTML += `<td id="total${index}" class="border-r border-gray-300 dark:border-gray-600 px-3 py-2 font-bold bg-gray-100 dark:bg-gray-800 text-center transition-colors">0</td>`;
-      });
-
-      updateTotals();
-      saveGame();
-    }
-
-    function editPlayers() {
-      document.getElementById('scoreBoard').classList.add('hidden');
-      document.getElementById('headerActions').classList.add('hidden'); // Hide buttons
-      document.getElementById('nameInput').classList.remove('hidden');
-      document.getElementById('startGameBtn').innerText = 'Save Changes';
-
-
-      const nameFields = document.getElementById('nameFields');
-      nameFields.innerHTML = "";
-      playerNames.forEach((name, i) => {
-        nameFields.innerHTML += `<input type="text" id="player${i}" class="border p-2 mb-1 block w-full max-w-xs rounded-lg dark:bg-gray-800" value="${name}" placeholder="Player ${i + 1} Name">`;
-      });
-    }
-
-    function addScoreRow() {
-      round++;
-      const tbody = document.getElementById("scoreBody");
-      const newRow = document.createElement("tr");
-      newRow.id = `round${round}`;
-      newRow.className = 'border-b border-gray-200 dark:border-gray-700';
-      newRow.innerHTML = `<td class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 font-semibold sticky-col'>${round}</td>`;
-
-      playerNames.forEach((_, index) => {
-        newRow.innerHTML += `<td class='border-r border-gray-300 dark:border-gray-600 p-1'><input type="number" value="0" class="w-20 p-1 text-center border rounded-md dark:bg-gray-800" id="score${round}-${index}" oninput="updateTotals()"></td>`;
-      });
-
-      tbody.appendChild(newRow);
-      if (!showingOldRounds) {
-          toggleOldRounds(document.querySelector('[onclick^="toggleOldRounds"]'), true);
-      }
-      updateTotals();
-    }
-
-    function updateTotals() {
-      let totals = [];
-      const numPlayers = playerNames.length;
-
-      for (let i = 0; i < numPlayers; i++) {
-        let total = 0;
-        for (let r = 1; r <= round; r++) {
-          const scoreInput = document.getElementById(`score${r}-${i}`);
-          if (scoreInput) {
-            total += parseInt(scoreInput.value) || 0;
-          }
+        /* Light mode styles */
+        .light {
+            background-color: #f0f4f8; /* Light background */
+            color: #1a202c; /* Dark text */
         }
-        totals.push(total);
-        const totalCell = document.getElementById(`total${i}`);
-        if (totalCell) {
-            totalCell.innerText = total;
+        .light .bg-card {
+            background-color: #ffffff;
         }
-      }
-
-      highlightScores(totals);
-      saveGame();
-      return totals; // Return totals for other functions to use
-    }
-
-    function highlightScores(totals) {
-        if(totals.length === 0) return;
-        
-      const maxScore = Math.max(...totals);
-      const minScore = Math.min(...totals);
-
-      playerNames.forEach((_, index) => {
-        const headerCell = document.getElementById(`header${index}`);
-        const totalCell = document.getElementById(`total${index}`);
-        headerCell.classList.remove("bg-green-300", "bg-red-300", "dark:bg-green-700", "dark:bg-red-700");
-        totalCell.classList.remove("bg-green-300", "bg-red-300", "dark:bg-green-700", "dark:bg-red-700");
-        
-        if (totals.length > 1 && totals[index] === maxScore) {
-          headerCell.classList.add("bg-green-300", "dark:bg-green-700");
-          totalCell.classList.add("bg-green-300", "dark:bg-green-700");
+        .light .border-input {
+            border-color: #cbd5e0;
         }
-        if (totals.length > 1 && totals[index] === minScore) {
-          headerCell.classList.add("bg-red-300", "dark:bg-red-700");
-          totalCell.classList.add("bg-red-300", "dark:bg-red-700");
+        .light .text-muted-foreground {
+            color: #718096;
         }
-      });
-    }
+        .light .hover\:bg-gray-100:hover {
+            background-color: #f7fafc;
+        }
+        .light .bg-green-200 {
+            background-color: #b9fbc0; /* Light green for winner */
+        }
+        .light .bg-red-200 {
+            background-color: #fecaca; /* Light red for loser */
+        }
+        .light .bg-blue-500 {
+            background-color: #3b82f6;
+        }
+        .light .bg-blue-600 {
+            background-color: #2563eb;
+        }
 
-    function saveGame() {
-      const data = {
-        players: playerNames,
-        scores: [],
-      };
-      for (let r = 1; r <= round; r++) {
-        const rowScores = [];
-        const rowExists = document.getElementById(`round${r}`);
-        if(rowExists){
-            for (let i = 0; i < playerNames.length; i++) {
-              const scoreInput = document.getElementById(`score${r}-${i}`);
-              const score = scoreInput ? parseInt(scoreInput.value) || 0 : 0;
-              rowScores.push(score);
+        /* Dark mode styles */
+        .dark {
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+        }
+        .dark .bg-card {
+            background-color: #2d3748;
+        }
+        .dark .border-input {
+            border-color: #4a5568;
+        }
+        .dark .text-muted-foreground {
+            color: #a0aec0;
+        }
+        .dark .hover\:bg-gray-700:hover {
+            background-color: #4a5568;
+        }
+        .dark .bg-green-700 {
+            background-color: #166534; /* Darker green for winner */
+        }
+        .dark .bg-red-700 {
+            background-color: #b91c1c; /* Darker red for loser */
+        }
+        .dark .bg-blue-500 {
+            background-color: #3b82f6;
+        }
+        .dark .bg-blue-600 {
+            background-color: #2563eb;
+        }
+
+        /* General table styling for fixed header/column */
+        .sticky-header th, .sticky-header td {
+            position: sticky;
+            top: 0;
+            background-color: inherit; /* Inherit background from parent to match theme */
+            z-index: 10; /* Ensure header is above scrolling content */
+        }
+
+        .sticky-first-col th:first-child,
+        .sticky-first-col td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: inherit; /* Inherit background from parent to match theme */
+            z-index: 11; /* Ensure first column is above scrolling content and header */
+        }
+
+        .table-container {
+            max-height: 70vh; /* Limit height for scrolling */
+            overflow: auto; /* Enable scrolling for the table content */
+            border-radius: 0.5rem;
+        }
+
+        /* Custom tooltip styles */
+        .tooltip-container {
+            position: relative; /* This makes the absolute positioning of tooltip-text relative to this container */
+            display: inline-block; /* Allows it to sit next to the button */
+            /* No need for group:hover here, as the info icon is separate */
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%; /* Position above the info icon */
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            font-size: 0.875rem;
+            pointer-events: none; /* Allows clicks to pass through to elements behind if tooltip is not active */
+        }
+
+        /* New class for active tooltips (for touch devices) */
+        .tooltip-text.active {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto; /* Re-enable pointer events when active */
+        }
+
+        /* Original hover effect for non-touch devices - applies to the info icon now */
+        @media (hover: hover) and (pointer: fine) {
+            .tooltip-container:hover .tooltip-text {
+                visibility: visible;
+                opacity: 1;
             }
-            data.scores.push(rowScores);
         }
-      }
-      localStorage.setItem("scoreData", JSON.stringify(data));
-    }
 
-    function loadGame() {
-      const savedData = localStorage.getItem("scoreData");
-      if (!savedData) return;
 
-      const data = JSON.parse(savedData);
-      playerNames = data.players || [];
-      
-      if (playerNames.length === 0) return;
-      
-      round = 0;
-      document.getElementById('numPlayers').value = playerNames.length;
-      document.getElementById('playerInput').classList.add('hidden');
-      document.getElementById('nameInput').classList.add('hidden');
-      document.getElementById('scoreBoard').classList.remove('hidden');
-      document.getElementById('headerActions').classList.remove('hidden'); // Show buttons
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            align-items: center; /* Use flexbox for centering content */
+            justify-content: center; /* Use flexbox for centering content */
+        }
 
-      const headerRow = document.getElementById("headerRow");
-      const totalRow = document.getElementById("totalRow");
-      headerRow.innerHTML = "<th class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col'>Round</th>";
-      totalRow.innerHTML = "<th class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 sticky-col'>Total</th>";
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative; /* Keep relative for inner elements */
+            /* Animation properties */
+            animation: fadeInScale 0.3s ease-out forwards;
+            /* Removed absolute positioning for flexbox centering */
+        }
+        .dark .modal-content {
+            background-color: #2d3748;
+        }
 
-      playerNames.forEach((name, index) => {
-        headerRow.innerHTML += `<th id="header${index}" class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 bg-gray-100 dark:bg-gray-800 transition-colors'>${name}</th>`;
-        totalRow.innerHTML += `<td id="total${index}" class="border-r border-gray-300 dark:border-gray-600 px-3 py-2 font-bold bg-gray-100 dark:bg-gray-800 text-center transition-colors">0</td>`;
-      });
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .dark .close-button:hover,
+        .dark .close-button:focus {
+            color: white;
+        }
 
-      const tbody = document.getElementById("scoreBody");
-      tbody.innerHTML = "";
-      data.scores.forEach(rowScores => {
-        round++;
-        const newRow = document.createElement("tr");
-        newRow.id = `round${round}`;
-        newRow.className = 'border-b border-gray-200 dark:border-gray-700';
-        newRow.innerHTML = `<td class='border-r border-gray-300 dark:border-gray-600 px-3 py-2 font-semibold sticky-col'>${round}</td>`;
-        rowScores.forEach((score, idx) => {
-          newRow.innerHTML += `<td class='border-r border-gray-300 dark:border-gray-600 p-1'><input type="number" value="${score}" class="w-20 p-1 text-center border rounded-md dark:bg-gray-800" id="score${round}-${idx}" oninput="updateTotals()"></td>`;
+        /* Input number arrows styling */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield; /* Firefox */
+        }
+
+        /* Animations for Winner Modal */
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8); /* Scale from center */
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulseAward {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Specific animations for each place to create a staggered effect */
+        @keyframes bounceIn1 {
+            0% { opacity: 0; transform: translateY(50px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bounceIn2 {
+            0% { opacity: 0; transform: translateY(50px); }
+            50% { opacity: 0; } /* Delay */
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bounceIn3 {
+            0% { opacity: 0; transform: translateY(50px); }
+            75% { opacity: 0; } /* Longer delay */
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-pop-in {
+            animation: popIn 0.5s ease-out;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .animate-fade-in.delay-1s {
+            animation-delay: 1s;
+        }
+
+        .animate-pulse-award {
+            animation: pulseAward 1.5s infinite ease-in-out;
+        }
+
+        .animate-bounce-in-1 { animation: bounceIn1 0.6s ease-out forwards; }
+        .animate-bounce-in-2 { animation: bounceIn1 0.6s ease-out 0.2s forwards; opacity: 0; } /* Staggered */
+        .animate-bounce-in-3 { animation: bounceIn1 0.6s ease-out 0.4s forwards; opacity: 0; } /* Staggered */
+
+        /* Ensure awards are large */
+        #winnerResults span {
+            display: inline-block; /* Essential for transform animations */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-8 px-4 transition-colors duration-300">
+
+    <!-- Dark Mode Toggle Button -->
+    <button id="darkModeToggle" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-md transition-colors duration-300">
+        <i class="fas fa-moon dark:hidden"></i>
+        <i class="fas fa-sun hidden dark:inline-block"></i>
+    </button>
+
+    <div class="w-full max-w-4xl bg-card rounded-lg shadow-xl p-6 md:p-8 transition-colors duration-300">
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-8">Card Game Score Tracker</h1>
+
+        <!-- Step 1: Number of Players Input -->
+        <div id="playerCountScreen" class="space-y-6">
+            <div class="flex flex-col items-center">
+                <label for="numPlayers" class="text-lg md:text-xl font-semibold mb-2">Enter Number of Players (2-10):</label>
+                <input type="number" id="numPlayers" min="2" max="10" placeholder="e.g., 4"
+                       class="w-full md:w-1/2 p-3 border border-input rounded-md text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
+                <p id="playerCountError" class="text-red-500 text-sm mt-2 hidden">Please enter a number between 2 and 10.</p>
+            </div>
+            <div class="flex justify-center">
+                <button id="nextToPlayerNames"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group">
+                    Next <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="nextToPlayerNamesTooltip"></i>
+                    <span class="tooltip-text" id="nextToPlayerNamesTooltip">Proceed to enter player names.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Player Names Input -->
+        <div id="playerNamesScreen" class="hidden space-y-6">
+            <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6">Enter Player Names</h2>
+            <div id="playerInputsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Player name inputs will be dynamically inserted here -->
+            </div>
+            <p id="playerNamesError" class="text-red-500 text-sm mt-2 hidden text-center">Please enter names for all players.</p>
+            <div class="flex justify-center gap-4">
+                <button id="backToPlayerCount"
+                        class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group">
+                    <i class="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i> Back
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="backToPlayerCountTooltip"></i>
+                    <span class="tooltip-text" id="backToPlayerCountTooltip">Go back to change number of players.</span>
+                </div>
+
+                <button id="confirmPlayerNames"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group">
+                    <span id="confirmPlayerNamesText">Start Game</span> <i class="fas fa-play ml-2 group-hover:scale-110 transition-transform"></i>
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="confirmPlayerNamesTooltip"></i>
+                    <span class="tooltip-text" id="confirmPlayerNamesTooltip">Start the game with these players.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Scoreboard -->
+        <div id="scoreboardScreen" class="space-y-6">
+            <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6">Scoreboard</h2>
+
+            <div class="flex flex-wrap justify-center gap-4 mb-6">
+                <button id="editPlayerNames"
+                        class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
+                    <i class="fas fa-user-edit mr-2 group-hover:rotate-6 transition-transform"></i> Edit Player Names
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="editPlayerNamesTooltip"></i>
+                    <span class="tooltip-text" id="editPlayerNamesTooltip">Edit player names without losing scores.</span>
+                </div>
+
+                <button id="screenshotBtn"
+                        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
+                    <i class="fas fa-camera mr-2 group-hover:scale-110 transition-transform"></i> Screenshot
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="screenshotBtnTooltip"></i>
+                    <span class="tooltip-text" id="screenshotBtnTooltip">Generate a screenshot of the scoreboard.</span>
+                </div>
+            </div>
+
+            <div class="table-container bg-gray-100 dark:bg-gray-800 rounded-lg shadow-inner">
+                <table id="scoreTable" class="w-full text-left border-collapse">
+                    <thead class="sticky-header">
+                        <tr class="bg-gray-200 dark:bg-gray-700">
+                            <th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg">Round</th>
+                            <!-- Player names will be inserted here -->
+                        </tr>
+                    </thead>
+                    <tbody id="scoreTableBody">
+                        <!-- Score rows and totals row will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 mt-6">
+                <button id="addRoundBtn"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
+                    <i class="fas fa-plus-circle mr-2 group-hover:rotate-6 transition-transform"></i> Add Round
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="addRoundTooltip"></i>
+                    <span class="tooltip-text" id="addRoundTooltip">Add a new round to the scoreboard.</span>
+                </div>
+
+                <button id="hideShowRoundsBtn"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
+                    <i class="fas fa-eye-slash mr-2 group-hover:scale-110 transition-transform"></i> <span id="hideShowRoundsText">Hide Old Rounds</span>
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="hideShowRoundsTooltip"></i>
+                    <span class="tooltip-text" id="hideShowRoundsTooltip">Toggle visibility of old rounds (show last 3).</span>
+                </div>
+
+                <button id="clearScoresBtn"
+                        class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
+                    <i class="fas fa-eraser mr-2 group-hover:rotate-6 transition-transform"></i> Clear Scores
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="clearScoresTooltip"></i>
+                    <span class="tooltip-text" id="clearScoresTooltip">Clear all scores and start a new game with current players.</span>
+                </div>
+
+                <button id="endGameBtn"
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base" disabled>
+                    <i class="fas fa-trophy mr-2 group-hover:scale-110 transition-transform"></i> End Game & Declare Winners
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="endGameTooltip"></i>
+                    <span class="tooltip-text" id="endGameTooltip">Declare winners (requires at least 15 rounds).</span>
+                </div>
+
+                <button id="resetGameBtn"
+                        class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group text-sm md:text-base">
+                    <i class="fas fa-redo mr-2 group-hover:rotate-180 transition-transform"></i> Reset Game
+                </button>
+                <div class="tooltip-container ml-2">
+                    <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer" data-tooltip-target="resetGameTooltip"></i>
+                    <span class="tooltip-text" id="resetGameTooltip">Clear all data and restart the game from scratch.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Winner Modal -->
+    <div id="winnerModal" class="modal">
+        <div class="modal-content text-center p-8 relative overflow-hidden">
+            <span class="close-button">&times;</span>
+            <h3 class="text-4xl md:text-5xl font-extrabold mb-6 text-yellow-500 dark:text-yellow-300 animate-pop-in">
+                <i class="fas fa-crown mr-2"></i> Game Over! <i class="fas fa-trophy ml-2"></i>
+            </h3>
+            <p class="text-xl md:text-2xl font-semibold mb-8 text-gray-700 dark:text-gray-300 animate-fade-in">
+                What an epic battle! Here are your champions!
+            </p>
+            <div id="winnerResults" class="space-y-6 text-lg">
+                <!-- Winner results will be inserted here -->
+            </div>
+            <button id="closeWinnerModal"
+                    class="mt-10 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 animate-fade-in delay-1s">
+                Awesome!
+            </button>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content text-center">
+            <span class="close-button" id="closeConfirmationModal">&times;</span>
+            <h3 class="text-2xl font-bold mb-4" id="confirmationModalTitle"></h3>
+            <p class="text-lg mb-6" id="confirmationModalMessage"></p>
+            <div class="flex justify-center gap-4">
+                <button id="confirmActionButton"
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                    Confirm
+                </button>
+                <button id="cancelActionButton"
+                        class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- html2canvas CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        // Global state object
+        let gameState = {
+            playerCount: 0,
+            playerNames: [],
+            rounds: [] // Each round is an array of scores, e.g., [10, -5, 20]
+        };
+
+        // Flag to track if we are in player name editing mode
+        let isEditingPlayerNames = false;
+
+        // DOM Elements
+        const playerCountScreen = document.getElementById('playerCountScreen');
+        const numPlayersInput = document.getElementById('numPlayers');
+        const playerCountError = document.getElementById('playerCountError');
+        const nextToPlayerNamesBtn = document.getElementById('nextToPlayerNames');
+
+        const playerNamesScreen = document.getElementById('playerNamesScreen');
+        const playerInputsContainer = document.getElementById('playerInputsContainer');
+        const playerNamesError = document.getElementById('playerNamesError');
+        const backToPlayerCountBtn = document.getElementById('backToPlayerCount');
+        const confirmPlayerNamesBtn = document.getElementById('confirmPlayerNames'); // Renamed from startNewGame
+        const confirmPlayerNamesText = document.getElementById('confirmPlayerNamesText');
+        const confirmPlayerNamesTooltip = document.getElementById('confirmPlayerNamesTooltip');
+
+
+        const scoreboardScreen = document.getElementById('scoreboardScreen');
+        const scoreTable = document.getElementById('scoreTable');
+        const scoreTableBody = document.getElementById('scoreTableBody');
+        const addRoundBtn = document.getElementById('addRoundBtn');
+        const editPlayerNamesBtn = document.getElementById('editPlayerNames');
+        const screenshotBtn = document.getElementById('screenshotBtn');
+        const clearScoresBtn = document.getElementById('clearScoresBtn');
+        const resetGameBtn = document.getElementById('resetGameBtn');
+        const hideShowRoundsBtn = document.getElementById('hideShowRoundsBtn');
+        const hideShowRoundsText = document.getElementById('hideShowRoundsText'); // New element for text
+        const hideShowRoundsTooltip = document.getElementById('hideShowRoundsTooltip'); // New element for tooltip
+        const endGameBtn = document.getElementById('endGameBtn');
+
+        const winnerModal = document.getElementById('winnerModal');
+        const closeWinnerModalBtn = document.querySelector('#winnerModal .close-button');
+        const closeWinnerModalBtn2 = document.getElementById('closeWinnerModal');
+        const winnerResultsDiv = document.getElementById('winnerResults');
+
+        // Confirmation Modal Elements
+        const confirmationModal = document.getElementById('confirmationModal');
+        const closeConfirmationModalBtn = document.getElementById('closeConfirmationModal');
+        const confirmationModalTitle = document.getElementById('confirmationModalTitle');
+        const confirmationModalMessage = document.getElementById('confirmationModalMessage');
+        const confirmActionButton = document.getElementById('confirmActionButton');
+        const cancelActionButton = document.getElementById('cancelActionButton');
+
+        const darkModeToggle = document.getElementById('darkModeToggle');
+
+        // --- Local Storage Functions ---
+        function saveGameState() {
+            localStorage.setItem('cardGameScores', JSON.stringify(gameState));
+        }
+
+        function loadGameState() {
+            const savedState = localStorage.getItem('cardGameScores');
+            if (savedState) {
+                gameState = JSON.parse(savedState);
+            }
+        }
+
+        // --- Screen Navigation Functions ---
+        function showScreen(screenId) {
+            playerCountScreen.classList.add('hidden');
+            playerNamesScreen.classList.add('hidden');
+            scoreboardScreen.classList.add('hidden');
+
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function renderPlayerCountScreen() {
+            isEditingPlayerNames = false; // Reset flag when going to player count screen
+            numPlayersInput.value = gameState.playerCount > 0 ? gameState.playerCount : '';
+            playerCountError.classList.add('hidden');
+            showScreen('playerCountScreen');
+        }
+
+        function renderPlayerNamesScreen() {
+            playerInputsContainer.innerHTML = '';
+            playerNamesError.classList.add('hidden');
+
+            // Adjust button visibility and text based on editing mode
+            if (isEditingPlayerNames) {
+                backToPlayerCountBtn.classList.add('hidden');
+                confirmPlayerNamesText.textContent = 'Save Changes';
+                confirmPlayerNamesTooltip.textContent = 'Save changes to player names.';
+                confirmPlayerNamesBtn.querySelector('i').className = 'fas fa-save ml-2 group-hover:scale-110 transition-transform';
+            } else {
+                backToPlayerCountBtn.classList.remove('hidden');
+                confirmPlayerNamesText.textContent = 'Start Game';
+                confirmPlayerNamesTooltip.textContent = 'Start the game with these players.';
+                confirmPlayerNamesBtn.querySelector('i').className = 'fas fa-play ml-2 group-hover:scale-110 transition-transform';
+            }
+
+            for (let i = 0; i < gameState.playerCount; i++) {
+                const div = document.createElement('div');
+                div.className = 'flex flex-col';
+                div.innerHTML = `
+                    <label for="player${i + 1}Name" class="mb-1 text-muted-foreground">Player ${i + 1} Name:</label>
+                    <input type="text" id="player${i + 1}Name" value="${gameState.playerNames[i] || ''}" placeholder="Player ${i + 1}"
+                           class="p-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
+                `;
+                playerInputsContainer.appendChild(div);
+            }
+            showScreen('playerNamesScreen');
+        }
+
+        function renderScoreboard() {
+            // Clear previous table content
+            scoreTable.querySelector('thead tr').innerHTML = '<th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg">Round</th>';
+            scoreTableBody.innerHTML = '';
+
+            // Add player names to header
+            gameState.playerNames.forEach(name => {
+                const th = document.createElement('th');
+                th.className = 'p-3 border-r border-gray-300 dark:border-gray-600 text-center';
+                th.textContent = name;
+                scoreTable.querySelector('thead tr').appendChild(th);
+            });
+            // Add rounded top-right corner to the last player name header
+            scoreTable.querySelector('thead tr th:last-child').classList.add('rounded-tr-lg');
+
+
+            // Add existing rounds
+            gameState.rounds.forEach((roundScores, index) => {
+                addRoundRow(roundScores, index + 1);
+            });
+
+            updateTotals();
+            checkEndGameEligibility();
+            showScreen('scoreboardScreen');
+        }
+
+        // --- Scoreboard Functions ---
+        function addRoundRow(scores = [], roundNumber) {
+            const tr = document.createElement('tr');
+            tr.className = 'border-t border-gray-200 dark:border-gray-700';
+            tr.dataset.roundIndex = roundNumber - 1; // Store round index for easy access
+
+            // Round number cell
+            const roundNumTd = document.createElement('td');
+            roundNumTd.className = 'p-3 border-r border-gray-200 dark:border-gray-700 font-semibold sticky-first-col';
+            roundNumTd.textContent = `Round ${roundNumber}`;
+            tr.appendChild(roundNumTd);
+
+            // Score input cells
+            for (let i = 0; i < gameState.playerCount; i++) {
+                const td = document.createElement('td');
+                td.className = 'p-1 border-r border-gray-200 dark:border-gray-700 text-center';
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = scores[i] !== undefined ? scores[i] : 0;
+                input.className = 'w-full p-2 rounded-md bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 text-center';
+                input.dataset.playerIndex = i;
+                input.addEventListener('input', handleScoreInput);
+                td.appendChild(input);
+                tr.appendChild(td);
+            }
+            scoreTableBody.appendChild(tr);
+        }
+
+        function handleScoreInput(event) {
+            const input = event.target;
+            const roundIndex = parseInt(input.closest('tr').dataset.roundIndex);
+            const playerIndex = parseInt(input.dataset.playerIndex);
+            const score = parseInt(input.value) || 0; // Ensure it's a number, default to 0 if invalid
+
+            if (!gameState.rounds[roundIndex]) {
+                gameState.rounds[roundIndex] = new Array(gameState.playerCount).fill(0);
+            }
+            gameState.rounds[roundIndex][playerIndex] = score;
+            saveGameState();
+            updateTotals();
+        }
+
+        function updateTotals() {
+            // Remove existing totals row if it exists
+            const existingTotalsRow = document.getElementById('totalsRow');
+            if (existingTotalsRow) {
+                existingTotalsRow.remove();
+            }
+
+            const totals = new Array(gameState.playerCount).fill(0);
+            gameState.rounds.forEach(roundScores => {
+                roundScores.forEach((score, index) => {
+                    totals[index] += score;
+                });
+            });
+
+            const totalsRow = document.createElement('tr');
+            totalsRow.id = 'totalsRow';
+            totalsRow.className = 'font-bold bg-gray-200 dark:bg-gray-700 border-t-2 border-gray-400 dark:border-gray-500';
+
+            const totalLabelTd = document.createElement('td');
+            totalLabelTd.className = 'p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-bl-lg';
+            totalLabelTd.textContent = 'Totals';
+            totalsRow.appendChild(totalLabelTd);
+
+            let highestScore = -Infinity;
+            let lowestScore = Infinity;
+            if (totals.length > 0) {
+                highestScore = Math.max(...totals);
+                lowestScore = Math.min(...totals);
+            }
+
+            const playerHeaderCells = scoreTable.querySelectorAll('thead tr th:not(:first-child)');
+
+            // Reset highlighting on headers
+            playerHeaderCells.forEach(th => {
+                th.classList.remove('bg-green-200', 'dark:bg-green-700', 'bg-red-200', 'dark:bg-red-700');
+            });
+
+            totals.forEach((total, index) => {
+                const td = document.createElement('td');
+                td.className = 'p-3 border-r border-gray-200 dark:border-gray-700 text-center';
+                td.textContent = total;
+
+                // Apply highlighting to total score cell and player name header
+                if (totals.length > 0) { // Only highlight if there are scores
+                    if (total === highestScore) {
+                        td.classList.add('bg-green-200', 'dark:bg-green-700');
+                        playerHeaderCells[index].classList.add('bg-green-200', 'dark:bg-green-700');
+                    }
+                    if (total === lowestScore) {
+                        td.classList.add('bg-red-200', 'dark:bg-red-700');
+                        playerHeaderCells[index].classList.add('bg-red-200', 'dark:bg-red-700');
+                    }
+                }
+                totalsRow.appendChild(td);
+            });
+            // Add rounded bottom-right corner to the last total cell
+            totalsRow.querySelector('td:last-child').classList.add('rounded-br-lg');
+
+            scoreTableBody.appendChild(totalsRow);
+        }
+
+        function checkEndGameEligibility() {
+            if (gameState.rounds.length >= 15) {
+                endGameBtn.disabled = false;
+                endGameBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                endGameBtn.disabled = true;
+                endGameBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // --- Confirmation Modal Logic ---
+        let currentActionCallback = null;
+
+        function showConfirmationModal(title, message, actionCallback) {
+            confirmationModalTitle.textContent = title;
+            confirmationModalMessage.textContent = message;
+            currentActionCallback = actionCallback;
+            confirmationModal.style.display = 'flex';
+        }
+
+        function hideConfirmationModal() {
+            confirmationModal.style.display = 'none';
+            currentActionCallback = null; // Clear the callback
+        }
+
+        confirmActionButton.addEventListener('click', () => {
+            if (currentActionCallback) {
+                currentActionCallback();
+            }
+            hideConfirmationModal();
         });
-        tbody.appendChild(newRow);
-      });
 
-      updateTotals();
-    }
+        cancelActionButton.addEventListener('click', () => {
+            hideConfirmationModal();
+        });
 
-    function clearScores() {
-      if(document.getElementById('winnerModal').classList.contains('hidden')) {
-        if (!confirm("Clear all scores and reset the game?")) return;
-      }
-      closeModal();
-      localStorage.removeItem("scoreData");
-      location.reload();
-    }
+        closeConfirmationModalBtn.addEventListener('click', () => {
+            hideConfirmationModal();
+        });
 
-    function clearOnlyScores() {
-      if (!confirm("Clear all scores and rounds but keep the player names?")) return;
-      round = 0;
-      document.getElementById("scoreBody").innerHTML = "";
-      updateTotals();
-    }
+        // Close modal if clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target == confirmationModal) {
+                hideConfirmationModal();
+            }
+        });
 
-    function toggleOldRounds(button, forceUpdate = false) {
-        if (!forceUpdate) {
-            showingOldRounds = !showingOldRounds;
+
+        // --- Tooltip Logic for Touch Devices ---
+        function hideAllTooltips() {
+            document.querySelectorAll('.tooltip-text.active').forEach(tooltip => {
+                tooltip.classList.remove('active');
+            });
         }
 
-        for (let r = 1; r <= round; r++) {
-            const row = document.getElementById(`round${r}`);
-            if (row) {
-                if (showingOldRounds || r > round - 3) {
-                    row.style.display = "";
+        // Event listener for clicks on the document to manage tooltips
+        document.addEventListener('click', (event) => {
+            const clickedElement = event.target;
+            const isTooltipIcon = clickedElement.closest('.tooltip-container .fa-info-circle');
+            const isTooltipText = clickedElement.closest('.tooltip-text');
+
+            if (isTooltipIcon) {
+                const tooltipId = isTooltipIcon.dataset.tooltipTarget;
+                const tooltipText = document.getElementById(tooltipId);
+
+                if (tooltipText) {
+                    // If this tooltip is already active, hide it. Otherwise, hide others and show this one.
+                    if (tooltipText.classList.contains('active')) {
+                        tooltipText.classList.remove('active');
+                    } else {
+                        hideAllTooltips(); // Hide any other active tooltips
+                        tooltipText.classList.add('active'); // Show this tooltip
+                    }
+                }
+            } else if (!isTooltipText) {
+                // If clicked outside any tooltip text, hide all active tooltips
+                hideAllTooltips();
+            }
+        });
+
+
+        // --- Event Handlers ---
+        nextToPlayerNamesBtn.addEventListener('click', () => {
+            const num = parseInt(numPlayersInput.value);
+            if (isNaN(num) || num < 2 || num > 10) {
+                playerCountError.classList.remove('hidden');
+            } else {
+                playerCountError.classList.add('hidden');
+                gameState.playerCount = num;
+                // Preserve existing player names if count matches, otherwise reset
+                if (gameState.playerNames.length !== num) {
+                    gameState.playerNames = new Array(num).fill('');
+                }
+                saveGameState();
+                isEditingPlayerNames = false; // Ensure this is false for initial setup
+                renderPlayerNamesScreen();
+            }
+        });
+
+        backToPlayerCountBtn.addEventListener('click', () => {
+            // Save current player names before going back
+            const playerInputs = playerInputsContainer.querySelectorAll('input[type="text"]');
+            playerInputs.forEach((input, index) => {
+                gameState.playerNames[index] = input.value.trim();
+            });
+            saveGameState();
+            renderPlayerCountScreen();
+        });
+
+        confirmPlayerNamesBtn.addEventListener('click', () => { // Changed from startNewGameBtn
+            const playerInputs = playerInputsContainer.querySelectorAll('input[type="text"]');
+            let allNamesEntered = true;
+            playerInputs.forEach((input, index) => {
+                const name = input.value.trim();
+                if (name === '') {
+                    allNamesEntered = false;
+                }
+                gameState.playerNames[index] = name;
+            });
+
+            if (!allNamesEntered) {
+                playerNamesError.classList.remove('hidden');
+            } else {
+                playerNamesError.classList.add('hidden');
+
+                if (isEditingPlayerNames) {
+                    // If in editing mode, just save and go back to scoreboard
+                    saveGameState();
+                    isEditingPlayerNames = false; // Exit editing mode
+                    renderScoreboard();
                 } else {
-                    row.style.display = "none";
+                    // This is initial game setup
+                    // If gameState.rounds already has data, it means we came from "Reset Game"
+                    // and should clear rounds. Otherwise, it's a fresh start.
+                    if (localStorage.getItem('cardGameScores') && gameState.rounds.length > 0) {
+                         // User is starting a new game after a reset, clear scores
+                         gameState.rounds = [];
+                    }
+                    saveGameState();
+                    renderScoreboard();
                 }
             }
-        }
-        
-        if (button) {
-            button.innerText = showingOldRounds ? 'Hide Old Rounds' : 'Show All Rounds';
-        }
-    }
+        });
 
+        addRoundBtn.addEventListener('click', () => {
+            const newRoundScores = new Array(gameState.playerCount).fill(0);
+            gameState.rounds.push(newRoundScores);
+            saveGameState();
+            addRoundRow(newRoundScores, gameState.rounds.length);
+            updateTotals();
+            checkEndGameEligibility();
+            // Scroll to the bottom to show the new round
+            scoreTableBody.closest('.table-container').scrollTop = scoreTableBody.closest('.table-container').scrollHeight;
+        });
 
-    function takeScreenshot() {
-      const scoreBoard = document.getElementById("scoreBoard");
-      const now = new Date();
-      const day = String(now.getDate()).padStart(2, '0');
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const year = now.getFullYear();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      
-      const filename = `Scores_${day}-${month}-${year}_${hours}${minutes}.jpeg`;
+        editPlayerNamesBtn.addEventListener('click', () => {
+            isEditingPlayerNames = true; // Set flag to true for editing mode
+            renderPlayerNamesScreen();
+        });
 
-      html2canvas(scoreBoard, {
-        scale: 2
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = filename;
-        link.href = canvas.toDataURL('image/jpeg', 0.9);
-        link.click();
-      });
-    }
+        screenshotBtn.addEventListener('click', () => {
+            const tableContainer = document.querySelector('.table-container');
+            const scoreTableElement = document.getElementById('scoreTable');
 
-    function closeModal() {
-      const modal = document.getElementById('winnerModal');
-      const modalContent = document.getElementById('modalContent');
-      modalContent.classList.add('scale-95', 'opacity-0');
-      setTimeout(() => {
-        modal.classList.add('hidden');
-      }, 200); // Match transition duration
-    }
+            // Store original styles
+            const originalMaxHeight = tableContainer.style.maxHeight;
+            const originalOverflow = tableContainer.style.overflow;
 
-    function endGame() {
-      const totals = updateTotals();
-      const playerData = playerNames.map((name, index) => ({
-        name: name,
-        score: totals[index]
-      })).sort((a, b) => b.score - a.score);
+            // Temporarily remove max-height and overflow to capture full table
+            tableContainer.style.maxHeight = 'none';
+            tableContainer.style.overflow = 'visible';
 
-      const winnerList = document.getElementById('winnerList');
-      winnerList.innerHTML = ''; // Clear previous results
+            // Temporarily hide buttons and other elements not part of the table for a cleaner screenshot
+            const scoreboardElement = document.getElementById('scoreboardScreen');
+            const buttonsContainer = scoreboardElement.querySelector('.flex.flex-wrap.justify-center.gap-4.mb-6');
+            const bottomButtonsContainer = scoreboardElement.querySelector('.flex.flex-wrap.justify-center.gap-4.mt-6');
+            const originalDisplayButtonsContainer = buttonsContainer.style.display;
+            const originalDisplayBottomButtonsContainer = bottomButtonsContainer.style.display;
 
-      const awards = ['🏆', '🥈', '🥉'];
-      let lastScore = -Infinity;
-      let rank = -1;
+            buttonsContainer.style.display = 'none';
+            bottomButtonsContainer.style.display = 'none';
 
-      // Show top 3 or more in case of ties
-      const playersToShow = playerData.slice(0, 3);
-      // Add any player tied with 3rd place
-      if (playerData.length > 3 && playerData[2].score === playerData[3].score) {
-          for(let i = 3; i < playerData.length; i++) {
-              if (playerData[i].score === playerData[2].score) {
-                  playersToShow.push(playerData[i]);
-              } else {
-                  break;
-              }
-          }
-      }
-      
-      playersToShow.forEach((player, index) => {
-        if (player.score < lastScore) {
-          rank++;
-        }
-        if (index === 0) {
-            rank = 0;
-        }
-        lastScore = player.score;
+            html2canvas(scoreTableElement, { // Target the actual table element
+                scale: 2, // Increase scale for higher clarity
+                useCORS: true, // Required if any images are loaded from external domains
+                logging: false, // Disable logging for cleaner console
+                backgroundColor: '#ffffff', // Set background to white for better visibility
+                // Set width and height to capture the full scrollable content
+                width: scoreTableElement.scrollWidth,
+                height: scoreTableElement.scrollHeight,
+            }).then(canvas => {
+                // Restore original styles
+                tableContainer.style.maxHeight = originalMaxHeight;
+                tableContainer.style.overflow = originalOverflow;
 
-        const award = rank < 3 ? awards[rank] : '🏅';
-        
-        winnerList.innerHTML += `
-          <div class="flex items-center bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-            <span class="text-4xl w-12">${award}</span>
-            <div class="flex-grow text-left ml-4">
-              <p class="text-xl font-bold">${player.name}</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">${player.score} points</p>
-            </div>
-          </div>
-        `;
-      });
-      
-      const modal = document.getElementById('winnerModal');
-      const modalContent = document.getElementById('modalContent');
-      modal.classList.remove('hidden');
-      setTimeout(() => {
-         modalContent.classList.remove('scale-95', 'opacity-0');
-      }, 10); // A small delay to allow the display property to apply
-    }
+                // Restore hidden elements
+                buttonsContainer.style.display = originalDisplayButtonsContainer;
+                bottomButtonsContainer.style.display = originalDisplayBottomButtonsContainer;
 
-    window.onload = loadGame;
-  </script>
+                const link = document.createElement('a');
+                const now = new Date();
+                const day = String(now.getDate()).padStart(2, '0');
+                const month = now.toLocaleString('default', { month: 'short' }).toUpperCase();
+                const year = now.getFullYear();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                link.download = `Score_${day}-${month}-${year}_${hours}${minutes}.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(error => {
+                console.error("Error generating screenshot:", error);
+                // Restore original styles even on error
+                tableContainer.style.maxHeight = originalMaxHeight;
+                tableContainer.style.overflow = originalOverflow;
+
+                // Restore hidden elements even on error
+                buttonsContainer.style.display = originalDisplayButtonsContainer;
+                bottomButtonsContainer.style.display = originalDisplayBottomButtonsContainer;
+            });
+        });
+
+        clearScoresBtn.addEventListener('click', () => {
+            showConfirmationModal(
+                'Clear All Scores?',
+                'Are you sure you want to clear all scores for the current players? This action cannot be undone.',
+                () => {
+                    gameState.rounds = [];
+                    saveGameState();
+                    renderScoreboard(); // Re-render to clear table rows
+                }
+            );
+        });
+
+        resetGameBtn.addEventListener('click', () => {
+            showConfirmationModal(
+                'Reset Game?',
+                'Are you sure you want to reset the entire game? This will clear all players, scores, and restart the app from the beginning. This action cannot be undone.',
+                () => {
+                    localStorage.removeItem('cardGameScores');
+                    gameState = {
+                        playerCount: 0,
+                        playerNames: [],
+                        rounds: []
+                    };
+                    isEditingPlayerNames = false; // Reset flag
+                    renderPlayerCountScreen(); // Go back to the very first screen
+                }
+            );
+        });
+
+        let roundsHidden = false;
+        hideShowRoundsBtn.addEventListener('click', () => {
+            const allRoundRows = Array.from(scoreTableBody.querySelectorAll('tr:not(#totalsRow)'));
+            const numRounds = allRoundRows.length;
+
+            if (!roundsHidden) {
+                // Hide all except the last 3
+                for (let i = 0; i < numRounds - 3; i++) {
+                    if (allRoundRows[i]) {
+                        allRoundRows[i].classList.add('hidden');
+                    }
+                }
+                hideShowRoundsText.textContent = 'Show All Rounds';
+                hideShowRoundsBtn.querySelector('i').className = 'fas fa-eye mr-2 group-hover:scale-110 transition-transform';
+                hideShowRoundsTooltip.textContent = 'Show all hidden rounds.';
+            } else {
+                // Show all
+                allRoundRows.forEach(row => row.classList.remove('hidden'));
+                hideShowRoundsText.textContent = 'Hide Old Rounds';
+                hideShowRoundsBtn.querySelector('i').className = 'fas fa-eye-slash mr-2 group-hover:scale-110 transition-transform';
+                hideShowRoundsTooltip.textContent = 'Toggle visibility of old rounds (show last 3).';
+            }
+            roundsHidden = !roundsHidden;
+        });
+
+        endGameBtn.addEventListener('click', () => {
+            if (gameState.rounds.length < 15) {
+                // This scenario should be prevented by disabled button, but as a fallback
+                alert("Please play at least 15 rounds before ending the game."); // Using alert as a fallback, will replace with custom modal if needed
+                return;
+            }
+
+            const finalScores = new Array(gameState.playerCount).fill(0);
+            gameState.rounds.forEach(roundScores => {
+                roundScores.forEach((score, index) => {
+                    finalScores[index] += score;
+                });
+            });
+
+            // Create an array of objects { name, score, originalIndex }
+            const playerScores = gameState.playerNames.map((name, index) => ({
+                name: name,
+                score: finalScores[index],
+                originalIndex: index
+            }));
+
+            // Sort players by score in descending order
+            playerScores.sort((a, b) => b.score - a.score);
+
+            winnerResultsDiv.innerHTML = ''; // Clear previous results
+
+            // Display results
+            if (playerScores.length > 0) {
+                winnerResultsDiv.innerHTML += `
+                    <div class="flex items-center justify-center space-x-4 animate-bounce-in-1">
+                        <span class="text-5xl md:text-6xl animate-pulse-award">🏆</span>
+                        <p class="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
+                            🥇 Winner: ${playerScores[0].name} (${playerScores[0].score})
+                        </p>
+                        <span class="text-5xl md:text-6xl animate-pulse-award">🏆</span>
+                    </div>
+                `;
+            }
+            if (playerScores.length > 1) {
+                winnerResultsDiv.innerHTML += `
+                    <div class="flex items-center justify-center space-x-3 animate-bounce-in-2">
+                        <span class="text-4xl md:text-5xl">🥈</span>
+                        <p class="text-xl md:text-2xl font-semibold text-blue-600 dark:text-blue-400">
+                            2nd Place: ${playerScores[1].name} (${playerScores[1].score})
+                        </p>
+                    </div>
+                `;
+            }
+            if (playerScores.length > 2) {
+                winnerResultsDiv.innerHTML += `
+                    <div class="flex items-center justify-center space-x-3 animate-bounce-in-3">
+                        <span class="text-3xl md:text-4xl">🥉</span>
+                        <p class="text-lg md:text-xl text-purple-600 dark:text-purple-400">
+                            3rd Place: ${playerScores[2].name} (${playerScores[2].score})
+                        </p>
+                    </div>
+                `;
+            }
+
+            winnerModal.style.display = 'flex'; // Show the modal
+        });
+
+        // Close modal event listeners
+        closeWinnerModalBtn.addEventListener('click', () => {
+            winnerModal.style.display = 'none';
+        });
+        closeWinnerModalBtn2.addEventListener('click', () => {
+            winnerModal.style.display = 'none';
+        });
+        window.addEventListener('click', (event) => {
+            if (event.target == winnerModal) {
+                winnerModal.style.display = 'none';
+            }
+        });
+
+        // Dark Mode Toggle
+        darkModeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            document.documentElement.classList.toggle('light');
+            // Update local storage for theme preference
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+            // Re-render scoreboard to apply correct highlighting colors based on theme
+            if (document.getElementById('scoreboardScreen').classList.contains('hidden') === false) {
+                 updateTotals();
+            }
+        });
+
+        // --- Initialization on Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGameState();
+
+            // Apply saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.classList.remove('light', 'dark');
+                document.documentElement.classList.add(savedTheme);
+            } else {
+                // Default to light if no theme saved
+                document.documentElement.classList.add('light');
+            }
+
+            if (gameState.playerCount > 0 && gameState.playerNames.length === gameState.playerCount) {
+                renderScoreboard();
+            } else if (gameState.playerCount > 0) {
+                renderPlayerNamesScreen();
+            } else {
+                renderPlayerCountScreen();
+            }
+        });
+    </script>
 </body>
 </html>
