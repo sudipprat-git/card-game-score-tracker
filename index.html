@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Game Score Tracker</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
@@ -33,10 +31,10 @@
         }
         /* Custom highlight colors for light mode - Adjusted for better contrast */
         .light .highlight-winner {
-            background-color: #4ade80; /* Tailwind green-400, darker than 300 */
+            background-color: #96e4b3; 
         }
         .light .highlight-loser {
-            background-color: #ef4444; /* Tailwind red-500, darker than 300 */
+            background-color: #f79f9f; 
         }
         .light .bg-blue-500 {
             background-color: #3b82f6;
@@ -64,10 +62,10 @@
         }
         /* Custom highlight colors for dark mode */
         .dark .highlight-winner {
-            background-color: #166534; /* Tailwind green-800 */
+            background-color: #41df7d; /* Tailwind green-800 */
         }
         .dark .highlight-loser {
-            background-color: #991b1b; /* Tailwind red-800 */
+            background-color: #e66464; /* Tailwind red-800 */
         }
         .dark .bg-blue-500 {
             background-color: #3b82f6;
@@ -345,42 +343,41 @@
 </head>
 <body class="min-h-screen flex flex-col items-center py-8 px-4 transition-colors duration-300">
 
-    <div class="w-full max-w-4xl bg-card rounded-lg shadow-xl p-6 md:p-8 transition-colors duration-300">
-        <h1 class="text-3xl md:text-4xl font-bold text-center mb-8">Card Game Score Tracker</h1>
+    <div class="w-full max-w-4xl bg-card rounded-lg shadow-xl p-6 md:p-8 transition-colors duration-300 relative">
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-800">Card Game Score Tracker</h1>
 
-        <!-- Step 1: Number of Players Input -->
+        <div class="absolute top-4 right-4 z-50">
+            <button id="darkModeToggle" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                <i id="darkModeIcon" class="fas mr-2 group-scope-hover:scale-110 transition-transform"></i> <span id="darkModeText"></span>
+            </button>
+        </div>
+
         <div id="playerCountScreen" class="space-y-6">
             <div class="flex flex-col items-center">
-                <label for="numPlayers" class="text-lg md:text-xl font-semibold mb-2">Enter Number of Players (2-10):</label>
-                <input type="number" id="numPlayers" min="2" max="10" placeholder="e.g., 4"
+                <label for="numPlayers" class="text-2xl md:text-3xl font-semibold text-center mb-6">How many people playing?</label>
+                <input type="number" id="numPlayers" min="2" max="10" placeholder="Enter a number between 2 and 10"
                        class="w-full md:w-1/2 p-3 border border-input rounded-md text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
                 <p id="playerCountError" class="text-red-500 text-sm mt-2 hidden">Please enter a number between 2 and 10.</p>
             </div>
             <div class="flex justify-center items-center">
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
                     <button id="nextToPlayerNames"
-                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
-                        Next <i class="fas fa-arrow-right ml-2 group-scope-hover:translate-x-1 transition-transform"></i>
+                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
+                        Next: Enter Player Names <i class="fas fa-arrow-right ml-2 group-scope-hover:translate-x-1 transition-transform"></i>
                     </button>
-                    <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="nextToPlayerNamesTooltip"></i>
-                        <span class="tooltip-text" id="nextToPlayerNamesTooltip">Proceed to enter player names.</span>
-                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Step 2: Player Names Input -->
         <div id="playerNamesScreen" class="hidden space-y-6">
-            <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6">Enter Player Names</h2>
+            <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6">Who all are playing?</h2>
             <div id="playerInputsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Player name inputs will be dynamically inserted here -->
-            </div>
+                </div>
             <p id="playerNamesError" class="text-red-500 text-sm mt-2 hidden text-center">Please enter names for all players.</p>
             <div class="flex justify-center gap-4 items-center">
                 <div id="backToPlayerCountGroup" class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-gray-300/50 dark:group-hover:bg-gray-700/50">
                     <button id="backToPlayerCount"
-                            class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
+                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
                         <i class="fas fa-arrow-left mr-2 group-scope-hover:-translate-x-1 transition-transform"></i> Back
                     </button>
                     <div class="tooltip-container ml-2">
@@ -391,7 +388,7 @@
 
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
                     <button id="confirmPlayerNames"
-                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
+                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
                         <span id="confirmPlayerNamesText">Start Game</span> <i class="fas fa-play ml-2 group-scope-hover:scale-110 transition-transform"></i>
                     </button>
                     <div class="tooltip-container ml-2">
@@ -402,19 +399,13 @@
             </div>
         </div>
 
-        <!-- Step 3: Scoreboard -->
-        <div id="scoreboardScreen" class="space-y-6 relative">
-            <!-- Dark Mode Toggle Button - Repositioned inside scoreboardScreen -->
-            <button id="darkModeToggle" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-md transition-colors duration-300 z-20">
-                <i id="darkModeIcon" class="fas"></i>
-            </button>
-
-            <h2 class="text-2xl md:text-3xl font-semibold text-center mb-6">Scoreboard</h2>
+        <div id="scoreboardScreen" class="hidden space-y-6 relative">
+            
 
             <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-6 items-center">
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-purple-500/10 dark:group-hover:bg-purple-500/20">
                     <button id="editPlayerNames"
-                            class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
                         <i class="fas fa-user-edit mr-2 group-scope-hover:rotate-6 transition-transform"></i> Edit Player Names
                     </button>
                     <div class="tooltip-container ml-2">
@@ -425,7 +416,7 @@
 
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-green-500/10 dark:group-hover:bg-green-500/20">
                     <button id="screenshotBtn"
-                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
                         <i class="fas fa-camera mr-2 group-scope-hover:scale-110 transition-transform"></i> Screenshot
                     </button>
                     <div class="tooltip-container ml-2">
@@ -440,19 +431,17 @@
                     <thead class="sticky-header">
                         <tr class="bg-gray-200 dark:bg-gray-700">
                             <th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg text-gray-800 dark:text-gray-200">Round</th>
-                            <!-- Player names will be inserted here -->
-                        </tr>
+                            </tr>
                     </thead>
                     <tbody id="scoreTableBody">
-                        <!-- Score rows and totals row will be inserted here -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
             <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 items-center">
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
                     <button id="addRoundBtn"
-                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
                         <i class="fas fa-plus-circle mr-2 group-scope-hover:rotate-6 transition-transform"></i> Add Round
                     </button>
                     <div class="tooltip-container ml-2">
@@ -463,7 +452,7 @@
 
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-yellow-500/10 dark:group-hover:bg-yellow-500/20">
                     <button id="hideShowRoundsBtn"
-                            class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                            class="bg-yellow-600 hover:bg-yellow-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
                         <i class="fas fa-eye-slash mr-2 group-scope-hover:scale-110 transition-transform"></i> <span id="hideShowRoundsText">Hide Old Rounds</span>
                     </button>
                     <div class="tooltip-container ml-2">
@@ -485,19 +474,19 @@
 
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-red-500/10 dark:group-hover:bg-red-500/20">
                     <button id="endGameBtn"
-                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base" disabled>
-                        <i class="fas fa-trophy mr-2 group-scope-hover:scale-110 transition-transform"></i> End Game & Declare Winners
+                            class="bg-teal-600 hover:bg-teal-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-trophy mr-2 group-scope-hover:scale-110 transition-transform"></i> Finish Game & See Ranks
                     </button>
                     <div class="tooltip-container ml-2">
                         <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="endGameTooltip"></i>
-                        <span class="tooltip-text" id="endGameTooltip">Declare winners (requires at least 15 rounds).</span>
+                        <span class="tooltip-text" id="endGameTooltip">Declare winners.</span>
                     </div>
                 </div>
 
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-gray-500/10 dark:group-hover:bg-gray-500/20">
                     <button id="resetGameBtn"
-                            class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
-                        <i class="fas fa-redo mr-2 group-scope-hover:rotate-180 transition-transform"></i> Reset Game
+                            class="bg-red-600 hover:bg-red-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-trash mr-2 group-scope-hover:rotate-180 transition-transform"></i> Reset Game
                     </button>
                     <div class="tooltip-container ml-2">
                         <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="resetGameTooltip"></i>
@@ -508,27 +497,24 @@
         </div>
     </div>
 
-    <!-- Winner Modal -->
     <div id="winnerModal" class="modal">
         <div class="modal-content text-center p-8 relative overflow-hidden">
             <span class="close-button">&times;</span>
             <h3 class="text-4xl md:text-5xl font-extrabold mb-6 text-yellow-500 dark:text-yellow-300 animate-pop-in">
-                <i class="fas fa-crown mr-2"></i> Game Over! <i class="fas fa-trophy ml-2"></i>
+                <i class="fas fa-crown mr-2"></i> Congratulations! <i class="fas fa-trophy ml-2"></i>
             </h3>
-            <p class="text-xl md:text-2xl font-semibold mb-8 text-gray-700 dark:text-gray-300 animate-fade-in">
-                What an epic battle! Here are your champions!
+            <p class="text-xl md:text-2xl font-semibold mb-8 text-teal dark:text-gray-800 animate-fade-in">
+                What an epic battle! Here are today's champions!
             </p>
             <div id="winnerResults" class="space-y-6 text-lg">
-                <!-- Winner results will be inserted here -->
-            </div>
+                </div>
             <button id="closeWinnerModal"
                     class="mt-10 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 animate-fade-in delay-1s">
-                Awesome!
+                Close!
             </button>
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
     <div id="confirmationModal" class="modal">
         <div class="modal-content text-center">
             <span class="close-button" id="closeConfirmationModal">&times;</span>
@@ -547,7 +533,6 @@
         </div>
     </div>
 
-    <!-- Screenshot Loading Modal -->
     <div id="screenshotLoadingModal" class="modal">
         <div class="modal-content text-center p-8">
             <i class="fas fa-spinner fa-spin text-5xl text-blue-500 mb-4"></i>
@@ -555,7 +540,6 @@
         </div>
     </div>
 
-    <!-- html2canvas CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
@@ -617,6 +601,7 @@
 
         const darkModeToggle = document.getElementById('darkModeToggle');
         const darkModeIcon = document.getElementById('darkModeIcon'); // Get the icon element
+        const darkModeText = document.getElementById('darkModeText'); // Get the text element
 
         // --- Local Storage Functions ---
         function saveGameState() {
@@ -702,7 +687,6 @@
             });
 
             updateTotals();
-            checkEndGameEligibility();
             showScreen('scoreboardScreen');
 
             // Apply hide/show state after rendering if rounds are supposed to be hidden
@@ -884,18 +868,23 @@
                 th.classList.remove('highlight-winner', 'highlight-loser'); // Use generic custom classes
             });
 
+            // Check if all scores are zero to determine if highlighting should be applied
+            const areAllScoresZero = totals.every(score => score === 0);
+
             totals.forEach((total, index) => {
                 const td = document.createElement('td');
                 td.className = 'p-3 border-r border-gray-200 dark:border-gray-700 text-center text-gray-800 dark:text-gray-200'; // Added text color classes
                 td.textContent = total;
 
                 // Apply highlighting to total score cell and player name header
-                if (totals.length > 0) { // Only highlight if there are scores
+                // only if not all scores are zero
+                if (!areAllScoresZero) {
                     if (total === highestScore) {
                         td.classList.add('highlight-winner'); // Use generic custom class
                         playerHeaderCells[index].classList.add('highlight-winner'); // Use generic custom class
                     }
-                    if (total === lowestScore) {
+                    // Only apply loser highlight if it's genuinely the lowest and not also the highest (i.e., not all scores are the same)
+                    if (total === lowestScore && highestScore !== lowestScore) {
                         td.classList.add('highlight-loser'); // Use generic custom class
                         playerHeaderCells[index].classList.add('highlight-loser'); // Use generic custom class
                     }
@@ -908,49 +897,74 @@
             scoreTableBody.appendChild(totalsRow);
         }
 
-        function checkEndGameEligibility() {
-            if (gameState.rounds.length >= 15) {
-                endGameBtn.disabled = false;
-                endGameBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else {
-                endGameBtn.disabled = true;
-                endGameBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
+        // --- Confirmation/Alert Modal Logic ---
+
+        // Function to hide the confirmation modal and clear temporary event listeners
+        function hideConfirmationModal() {
+            confirmationModal.style.display = 'none';
         }
 
-        // --- Confirmation Modal Logic ---
-        let currentActionCallback = null;
-
-        function showConfirmationModal(title, message, actionCallback) {
+        // Function to display an alert-style modal (single OK button)
+        function showAlertDialog(title, message, okText = 'OK') {
             confirmationModalTitle.textContent = title;
             confirmationModalMessage.textContent = message;
-            currentActionCallback = actionCallback;
+
+            confirmActionButton.textContent = okText;
+            cancelActionButton.classList.add('hidden'); // Hide cancel button for alerts
+
+            // Clear previous listeners to prevent multiple bindings if modal is reused
+            confirmActionButton.onclick = null;
+            closeConfirmationModalBtn.onclick = null;
+
+            confirmActionButton.addEventListener('click', function _okHandler() {
+                hideConfirmationModal();
+                confirmActionButton.removeEventListener('click', _okHandler); // Clean up listener
+            }, { once: true });
+
+            closeConfirmationModalBtn.addEventListener('click', function _closeAlertHandler() {
+                hideConfirmationModal();
+                closeConfirmationModalBtn.removeEventListener('click', _closeAlertHandler); // Clean up listener
+            }, { once: true });
+
             confirmationModal.style.display = 'flex';
         }
 
-        function hideConfirmationModal() {
-            confirmationModal.style.display = 'none';
-            currentActionCallback = null; // Clear the callback
+        // Function to display a confirmation-style modal (Confirm/Cancel buttons)
+        function showConfirmationModal(title, message, confirmCallback) {
+            confirmationModalTitle.textContent = title;
+            confirmationModalMessage.textContent = message;
+
+            confirmActionButton.textContent = 'Confirm';
+            cancelActionButton.textContent = 'Cancel';
+            cancelActionButton.classList.remove('hidden'); // Ensure cancel button is visible for confirmations
+
+            // Clear previous listeners to prevent multiple bindings if modal is reused
+            confirmActionButton.onclick = null;
+            cancelActionButton.onclick = null;
+            closeConfirmationModalBtn.onclick = null;
+
+            confirmActionButton.addEventListener('click', function _confirmHandler() {
+                confirmCallback();
+                hideConfirmationModal();
+                confirmActionButton.removeEventListener('click', _confirmHandler); // Clean up listener
+            }, { once: true });
+
+            cancelActionButton.addEventListener('click', function _cancelHandler() {
+                hideConfirmationModal();
+                cancelActionButton.removeEventListener('click', _cancelHandler); // Clean up listener
+            }, { once: true });
+
+            closeConfirmationModalBtn.addEventListener('click', function _closeConfirmHandler() {
+                hideConfirmationModal();
+                closeConfirmationModalBtn.removeEventListener('click', _closeConfirmHandler); // Clean up listener
+            }, { once: true });
+
+            confirmationModal.style.display = 'flex';
         }
 
-        confirmActionButton.addEventListener('click', () => {
-            if (currentActionCallback) {
-                currentActionCallback();
-            }
-            hideConfirmationModal();
-        });
-
-        cancelActionButton.addEventListener('click', () => {
-            hideConfirmationModal();
-        });
-
-        closeConfirmationModalBtn.addEventListener('click', () => {
-            hideConfirmationModal();
-        });
-
-        // Close modal if clicking outside
+        // Close modal if clicking outside (general handler, will coexist with specific button handlers)
         window.addEventListener('click', (event) => {
-            if (event.target == confirmationModal) {
+            if (event.target === confirmationModal) {
                 hideConfirmationModal();
             }
         });
@@ -986,6 +1000,14 @@
                 // If clicked outside any tooltip text, hide all active tooltips
                 hideAllTooltips();
             }
+        });
+
+        // Add event listeners for the dark mode toggle button to show/hide tooltip on hover
+        darkModeToggle.addEventListener('mouseenter', () => {
+            document.getElementById('darkModeToggleTooltip').classList.add('active');
+        });
+        darkModeToggle.addEventListener('mouseleave', () => {
+            document.getElementById('darkModeToggleTooltip').classList.remove('active');
         });
 
 
@@ -1082,7 +1104,6 @@
             // Re-render the entire scoreboard to ensure all states are correctly applied
             renderScoreboard();
             updateTotals();
-            checkEndGameEligibility();
             // Scroll to the bottom to show the new round
             scoreTableBody.closest('.table-container').scrollTop = scoreTableBody.closest('.table-container').scrollHeight;
         });
@@ -1169,7 +1190,7 @@
         clearScoresBtn.addEventListener('click', () => {
             showConfirmationModal(
                 'Clear All Scores?',
-                'Are you sure you want to clear all scores for the current players? This action cannot be undone.',
+                'Are you sure? This will wipe the slate clean for all players, resetting every score to zero. This can\'t be undone.',
                 () => {
                     gameState.rounds = [];
                     saveGameState();
@@ -1181,7 +1202,7 @@
         resetGameBtn.addEventListener('click', () => {
             showConfirmationModal(
                 'Reset Game?',
-                'Are you sure you want to reset the entire game? This will clear all players, scores, and restart the app from the beginning. This action cannot be undone.',
+                'Start from scratch? This will erase all players and scores permanently, taking you back to the very beginning. Are you ready for a fresh start?',
                 () => {
                     localStorage.removeItem('cardGameScores');
                     gameState = {
@@ -1228,10 +1249,13 @@
         });
 
         endGameBtn.addEventListener('click', () => {
+            // Check if less than 15 rounds are played
             if (gameState.rounds.length < 15) {
-                // This scenario should be prevented by disabled button, but as a fallback
-                alert("Please play at least 15 rounds before ending the game."); // Using alert as a fallback, will replace with custom modal if needed
-                return;
+                showAlertDialog(
+                    'Game Not Ready',
+                    `You need at least 15 rounds to finish the game. Current rounds: ${gameState.rounds.length}.`
+                );
+                return; // Stop execution if condition not met
             }
 
             const finalScores = new Array(gameState.playerCount).fill(0);
@@ -1257,18 +1281,19 @@
             if (playerScores.length > 0) {
                 winnerResultsDiv.innerHTML += `
                     <div class="flex items-center justify-center space-x-4 animate-bounce-in-1">
-                        <span class="text-5xl md:text-6xl animate-pulse-award">🏆</span>
+                        
+                        <span class="text-4xl md:text-6xl">&#x1F947;</span>
                         <p class="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
-                            🥇 Winner: ${playerScores[0].name} (${playerScores[0].score})
+                            Winner: ${playerScores[0].name} (${playerScores[0].score})
                         </p>
-                        <span class="text-5xl md:text-6xl animate-pulse-award">🏆</span>
+                       
                     </div>
                 `;
             }
             if (playerScores.length > 1) {
                 winnerResultsDiv.innerHTML += `
                     <div class="flex items-center justify-center space-x-3 animate-bounce-in-2">
-                        <span class="text-4xl md:text-5xl">🥈</span>
+                        <span class="text-4xl md:text-5xl">&#x1F948;</span>
                         <p class="text-xl md:text-2xl font-semibold text-blue-600 dark:text-blue-400">
                             2nd Place: ${playerScores[1].name} (${playerScores[1].score})
                         </p>
@@ -1278,7 +1303,7 @@
             if (playerScores.length > 2) {
                 winnerResultsDiv.innerHTML += `
                     <div class="flex items-center justify-center space-x-3 animate-bounce-in-3">
-                        <span class="text-3xl md:text-4xl">🥉</span>
+                        <span class="text-3xl md:text-4xl">&#x1F949;</span>
                         <p class="text-lg md:text-xl text-purple-600 dark:text-purple-400">
                             3rd Place: ${playerScores[2].name} (${playerScores[2].score})
                         </p>
@@ -1302,14 +1327,16 @@
             }
         });
 
-        // Function to update the icon based on the theme
-        function updateDarkModeIcon() {
+        // Function to update the icon and text based on the theme
+        function updateDarkModeUI() {
             if (document.documentElement.classList.contains('dark')) {
                 darkModeIcon.classList.remove('fa-sun');
                 darkModeIcon.classList.add('fa-moon');
+                darkModeText.textContent = 'Light Mode';
             } else {
                 darkModeIcon.classList.remove('fa-moon');
                 darkModeIcon.classList.add('fa-sun');
+                darkModeText.textContent = 'Dark Mode';
             }
         }
 
@@ -1323,8 +1350,8 @@
             } else {
                 localStorage.setItem('theme', 'light');
             }
-            // Update the icon to reflect the new theme
-            updateDarkModeIcon();
+            // Update the icon and text to reflect the new theme
+            updateDarkModeUI();
             // Re-render scoreboard to apply correct highlighting colors based on theme
             if (document.getElementById('scoreboardScreen').classList.contains('hidden') === false) {
                  updateTotals();
@@ -1350,8 +1377,8 @@
                     document.documentElement.classList.add('light');
                 }
             }
-            // Set the initial icon based on the loaded/detected theme
-            updateDarkModeIcon();
+            // Set the initial icon and text based on the loaded/detected theme
+            updateDarkModeUI();
 
             if (gameState.playerCount > 0 && gameState.playerNames.length === gameState.playerCount) {
                 renderScoreboard();
