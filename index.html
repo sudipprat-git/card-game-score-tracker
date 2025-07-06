@@ -339,7 +339,38 @@
         .dark .edit-icon.latest-round-active {
             color: #60a5fa; /* Lighter blue for active in dark mode */
         }
-    </style>
+    
+/* Fully static scoreboard styling - unaffected by themes */
+.scoreboard-static {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    forced-color-adjust: none;
+    color-scheme: only light;
+}
+
+.scoreboard-static table,
+.scoreboard-static th,
+.scoreboard-static td {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #cccccc !important;
+}
+
+/* Static highlight colors (accessible in both light/dark environments) */
+.scoreboard-static .highlight-winner {
+    background-color: #2E7D32 !important; /* Deep green */
+    color: #ffffff !important;
+}
+.scoreboard-static .highlight-loser {
+    background-color: #C62828 !important; /* Deep red */
+    color: #ffffff !important;
+}
+
+/* Input text color fix */
+.scoreboard-static input {
+    color: #000000 !important;
+}
+</style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-8 px-4 transition-colors duration-300">
 
@@ -426,7 +457,7 @@
                 </div>
             </div>
 
-            <div class="table-container bg-gray-100 dark:bg-gray-800 rounded-lg shadow-inner">
+            <div class="scoreboard-static"><div class="table-container bg-gray-100 dark:bg-gray-800 rounded-lg shadow-inner">
                 <table id="scoreTable" class="w-full text-left border-collapse">
                     <thead class="sticky-header">
                         <tr class="bg-gray-200 dark:bg-gray-700">
@@ -438,7 +469,8 @@
                 </table>
             </div>
 
-            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 items-center">
+            </div>
+<div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 items-center">
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
                     <button id="addRoundBtn"
                             class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
