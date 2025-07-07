@@ -351,19 +351,19 @@
 .scoreboard-static table,
 .scoreboard-static th,
 .scoreboard-static td {
-    background-color: #ffffff !important;
+    background-color: #eeeeee !important;
     color: #000000 !important;
     border-color: #cccccc !important;
 }
 
 /* Static highlight colors (accessible in both light/dark environments) */
 .scoreboard-static .highlight-winner {
-    background-color: #2E7D32 !important; /* Deep green */
-    color: #ffffff !important;
+    background-color: #c9f0ca !important; 
+    color: #000000 !important;
 }
 .scoreboard-static .highlight-loser {
-    background-color: #C62828 !important; /* Deep red */
-    color: #ffffff !important;
+    background-color: #edc2c2 !important; 
+    color: #000000 !important;
 }
 
 /* Input text color fix */
@@ -1364,11 +1364,11 @@
             if (document.documentElement.classList.contains('dark')) {
                 darkModeIcon.classList.remove('fa-sun');
                 darkModeIcon.classList.add('fa-moon');
-                darkModeText.textContent = 'Light Mode';
+                darkModeText.textContent = 'Dark Mode';
             } else {
                 darkModeIcon.classList.remove('fa-moon');
                 darkModeIcon.classList.add('fa-sun');
-                darkModeText.textContent = 'Dark Mode';
+                darkModeText.textContent = 'Light Mode';
             }
         }
 
