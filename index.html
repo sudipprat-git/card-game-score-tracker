@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Game Score Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' };</script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -370,17 +371,119 @@
 .scoreboard-static input {
     color: #000000 !important;
 }
+
+/* ---- Frozen header row, Round column and Totals row ----
+   (the original rules targeted descendants of .sticky-first-col, so they never matched) */
+.scoreboard-static thead th { position: sticky; top: 0; z-index: 12; }
+.scoreboard-static th.sticky-first-col,
+.scoreboard-static td.sticky-first-col { position: sticky; left: 0; z-index: 11; }
+.scoreboard-static thead th.sticky-first-col { z-index: 13; }
+.scoreboard-static #totalsRow td { position: sticky; bottom: 0; z-index: 12; }
+.scoreboard-static #totalsRow td.sticky-first-col { z-index: 13; }
+/* Keep a visible divider on frozen cells (borders collapse away on sticky cells) */
+.scoreboard-static th.sticky-first-col,
+.scoreboard-static td.sticky-first-col { box-shadow: 1px 0 0 #cccccc; }
+.scoreboard-static thead th { box-shadow: 0 1px 0 #cccccc; }
+.scoreboard-static thead th.sticky-first-col { box-shadow: 1px 1px 0 #cccccc; }
+.scoreboard-static #totalsRow td { box-shadow: 0 -2px 0 #9ca3af; }
+.scoreboard-static #totalsRow td.sticky-first-col { box-shadow: 1px -2px 0 #9ca3af; }
+/* While a screenshot is being captured, render the table un-frozen so the image is complete */
+body.capturing .scoreboard-static th,
+body.capturing .scoreboard-static td { position: static !important; box-shadow: none !important; }
+
+/* ---- Usability & polish ---- */
+:focus-visible { outline: 3px solid #3b82f6; outline-offset: 2px; }
+.info-btn { background: none; border: 0; padding: 0.5rem; margin: -0.5rem; line-height: 1; border-radius: 9999px; cursor: pointer; }
+/* Non-colour cues for best / worst totals (helps colour-blind users) */
+.scoreboard-static .highlight-winner::before { content: '\2605\00a0'; font-size: 0.8em; }
+.scoreboard-static .highlight-loser::before { content: '\25BC\00a0'; font-size: 0.8em; }
+.rank-badge { display: block; font-size: 0.9em; line-height: 1.1; }
+/* +/- helper shown while a score box is focused */
+.score-cell { position: relative; }
+.sign-btn {
+    display: none; position: absolute; left: 2px; top: 50%; transform: translateY(-50%); z-index: 5;
+    width: 1.6em; height: 1.6em; border: 0; border-radius: 50%; padding: 0;
+    background: #1d4ed8; color: #ffffff; font-size: 0.75em; font-weight: 700;
+    align-items: center; justify-content: center; cursor: pointer;
+}
+.score-cell:focus-within .sign-btn { display: flex; }
+/* Bottom controls: primary action on its own row, divider before destructive actions */
+#bottomControls > .primary-row { flex-basis: 100%; justify-content: center; }
+.bottom-divider { flex-basis: 100%; height: 1px; margin: 0.25rem 0; background: rgba(128,128,128,0.35); }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* Short header labels are only used in Table Only view */
+.lbl-short { display: none; }
+body.table-only .lbl-full { display: none; }
+body.table-only .lbl-short { display: inline; }
+
+/* ---- Table Only (full screen) view ---- */
+.table-only-exit { display: none; }
+body.table-only { padding: 0; display: block; }
+body.table-only .app-card {
+    max-width: none; width: 100%; height: 100vh; height: 100dvh;
+    border-radius: 0; box-shadow: none;
+    padding: 0.5rem; display: flex; flex-direction: column;
+}
+body.table-only .app-title,
+body.table-only .theme-toggle-wrap,
+body.table-only #topControls { display: none !important; }
+body.table-only #scoreboardScreen {
+    flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+}
+body.table-only #scoreboardScreen > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+body.table-only .scoreboard-static { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+body.table-only .scoreboard-static .table-container { max-height: none; flex: 1 1 auto; min-height: 0; }
+body.table-only #bottomControls { flex: 0 0 auto; padding-top: 0.5rem; }
+body.table-only #bottomControls > div:not(.keep-in-table-view) { display: none; }
+body.table-only #bottomControls > .table-only-exit { display: flex; }
+
+/* Table Only: compact, evenly shared columns that scale with screen width and player count.
+   --n (player count) is set from JS. Font size grows when there are few players / wide screens
+   and shrinks (down to a readable minimum) when space is tight. */
+body.table-only .app-card { padding: 0.25rem; }
+body.table-only #scoreTable {
+    table-layout: fixed;
+    width: 100%;
+    min-width: calc(3.25rem + var(--n, 4) * 2.2rem); /* below this, scroll sideways instead of cramping */
+    /* --fit-font is set by JS when the rows leave spare height (e.g. Hide Old Rounds); otherwise this default applies */
+    font-size: var(--fit-font, clamp(0.75rem, calc((100vw - 4.75rem) / var(--n, 4) / 3.6), 1.75rem));
+    line-height: 1.15;
+}
+body.table-only #scoreTable th,
+body.table-only #scoreTable td { padding: 0.2rem 0.15rem; }
+body.table-only #scoreTable thead th {
+    font-size: 0.85em; font-weight: 700;
+    overflow-wrap: anywhere; word-break: break-word; hyphens: auto;
+    vertical-align: middle;
+}
+body.table-only #scoreTable th.sticky-first-col,
+body.table-only #scoreTable td.sticky-first-col { width: 3.25rem; padding-left: 0.2rem; padding-right: 0.2rem; }
+body.table-only #scoreTable thead th.sticky-first-col { font-size: 0.9em; }
+body.table-only #scoreTable td.sticky-first-col > div { flex-wrap: wrap; justify-content: center; gap: 0 0.25rem; }
+body.table-only #scoreTable .edit-icon { margin-left: 0; font-size: 0.7em; }
+body.table-only #scoreTable input {
+    width: 100%; min-width: 0; padding: 0.2rem 0; font: inherit; font-weight: 600; text-align: center;
+}
+body.table-only #scoreTable tbody tr:not(#totalsRow) > td { height: var(--row-h, auto); vertical-align: middle; }
+body.table-only #scoreTable #totalsRow td { font-size: 1.1em; padding-top: 0.3rem; padding-bottom: 0.3rem; }
+body.table-only #bottomControls > div { padding: 0.15rem; }
+body.table-only #bottomControls button { padding: 0.35rem 0.75rem; font-size: 0.95rem; }
+body.table-only #bottomControls > .primary-row { flex-basis: auto; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-8 px-4 transition-colors duration-300">
 
-    <div class="w-full max-w-4xl bg-card rounded-lg shadow-xl p-6 md:p-8 transition-colors duration-300 relative">
-        <h1 class="text-3xl md:text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-800">Card Game Score Tracker</h1>
+    <div class="app-card w-full max-w-4xl bg-card rounded-lg shadow-xl p-6 md:p-8 transition-colors duration-300 relative">
+        <h1 class="app-title text-3xl md:text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-amber-800">Card Game Score Tracker</h1>
 
-        <div class="absolute top-4 right-4 z-50">
+        <div class="theme-toggle-wrap absolute top-4 right-4 z-50">
             <button id="darkModeToggle" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
                 <i id="darkModeIcon" class="fas mr-2 group-scope-hover:scale-110 transition-transform"></i> <span id="darkModeText"></span>
             </button>
+            <span class="tooltip-text" id="darkModeToggleTooltip" role="tooltip" style="top: 115%; bottom: auto; left: auto; right: 0; transform: none; width: max-content;">Switch between light and dark mode.</span>
         </div>
 
         <div id="playerCountScreen" class="space-y-6">
@@ -412,7 +515,7 @@
                         <i class="fas fa-arrow-left mr-2 group-scope-hover:-translate-x-1 transition-transform"></i> Back
                     </button>
                     <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="backToPlayerCountTooltip"></i>
+                        <button type="button" class="info-btn" data-tooltip-target="backToPlayerCountTooltip" aria-describedby="backToPlayerCountTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
                         <span class="tooltip-text" id="backToPlayerCountTooltip">Go back to change number of players.</span>
                     </div>
                 </div>
@@ -423,7 +526,7 @@
                         <span id="confirmPlayerNamesText">Start Game</span> <i class="fas fa-play ml-2 group-scope-hover:scale-110 transition-transform"></i>
                     </button>
                     <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="confirmPlayerNamesTooltip"></i>
+                        <button type="button" class="info-btn" data-tooltip-target="confirmPlayerNamesTooltip" aria-describedby="confirmPlayerNamesTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
                         <span class="tooltip-text" id="confirmPlayerNamesTooltip">Start the game with these players.</span>
                     </div>
                 </div>
@@ -433,14 +536,14 @@
         <div id="scoreboardScreen" class="hidden space-y-6 relative">
             
 
-            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-6 items-center">
+            <div id="topControls" class="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-6 items-center">
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-purple-500/10 dark:group-hover:bg-purple-500/20">
                     <button id="editPlayerNames"
                             class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
                         <i class="fas fa-user-edit mr-2 group-scope-hover:rotate-6 transition-transform"></i> Edit Player Names
                     </button>
                     <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="editPlayerNamesTooltip"></i>
+                        <button type="button" class="info-btn" data-tooltip-target="editPlayerNamesTooltip" aria-describedby="editPlayerNamesTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
                         <span class="tooltip-text" id="editPlayerNamesTooltip">Edit player names without losing scores.</span>
                     </div>
                 </div>
@@ -451,8 +554,30 @@
                         <i class="fas fa-camera mr-2 group-scope-hover:scale-110 transition-transform"></i> Screenshot
                     </button>
                     <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="screenshotBtnTooltip"></i>
+                        <button type="button" class="info-btn" data-tooltip-target="screenshotBtnTooltip" aria-describedby="screenshotBtnTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
                         <span class="tooltip-text" id="screenshotBtnTooltip">Generate a screenshot of the scoreboard.</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-purple-500/10 dark:group-hover:bg-purple-500/20">
+                    <button id="scoreModeBtn" type="button" aria-live="polite"
+                            class="bg-purple-600 hover:bg-purple-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i id="scoreModeIcon" class="fas fa-arrow-up mr-2" aria-hidden="true"></i> <span id="scoreModeText">Highest Wins</span>
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <button type="button" class="info-btn" data-tooltip-target="scoreModeTooltip" aria-describedby="scoreModeTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
+                        <span class="tooltip-text" id="scoreModeTooltip"></span>
+                    </div>
+                </div>
+
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-teal-500/10 dark:group-hover:bg-teal-500/20">
+                    <button id="tableOnlyBtn" type="button"
+                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-expand mr-2 group-scope-hover:scale-110 transition-transform" aria-hidden="true"></i> Table Only View
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <button type="button" class="info-btn" data-tooltip-target="tableOnlyTooltip" aria-describedby="tableOnlyTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
+                        <span class="tooltip-text" id="tableOnlyTooltip">Show only the score table and Add Round button in full screen.</span>
                     </div>
                 </div>
             </div>
@@ -461,7 +586,7 @@
                 <table id="scoreTable" class="w-full text-left border-collapse">
                     <thead class="sticky-header">
                         <tr class="bg-gray-200 dark:bg-gray-700">
-                            <th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg text-gray-800 dark:text-gray-200">Round</th>
+                            <th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg text-gray-800 dark:text-gray-200"><span class="lbl-full">Round</span><span class="lbl-short" aria-label="Round">R</span></th>
                             </tr>
                     </thead>
                     <tbody id="scoreTableBody">
@@ -470,37 +595,26 @@
             </div>
 
             </div>
-<div class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 items-center">
-                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
+<div id="bottomControls" class="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 items-center">
+                <div class="primary-row keep-in-table-view flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20">
                     <button id="addRoundBtn"
-                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                            class="bg-blue-600 hover:bg-blue-800 text-gray-200 font-bold py-3 px-8 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-base md:text-lg">
                         <i class="fas fa-plus-circle mr-2 group-scope-hover:rotate-6 transition-transform"></i> Add Round
                     </button>
                     <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="addRoundTooltip"></i>
+                        <button type="button" class="info-btn" data-tooltip-target="addRoundTooltip" aria-describedby="addRoundTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
                         <span class="tooltip-text" id="addRoundTooltip">Add a new round to the scoreboard.</span>
                     </div>
                 </div>
 
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-yellow-500/10 dark:group-hover:bg-yellow-500/20">
                     <button id="hideShowRoundsBtn"
-                            class="bg-yellow-600 hover:bg-yellow-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
+                            class="bg-transparent border-2 border-slate-500 text-slate-700 dark:text-slate-200 hover:bg-slate-500/15 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope">
                         <i class="fas fa-eye-slash mr-2 group-scope-hover:scale-110 transition-transform"></i> <span id="hideShowRoundsText">Hide Old Rounds</span>
                     </button>
                     <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="hideShowRoundsTooltip"></i>
+                        <button type="button" class="info-btn" data-tooltip-target="hideShowRoundsTooltip" aria-describedby="hideShowRoundsTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
                         <span class="tooltip-text" id="hideShowRoundsTooltip">Toggle visibility of old rounds (show last 3).</span>
-                    </div>
-                </div>
-
-                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-orange-500/10 dark:group-hover:bg-orange-500/20">
-                    <button id="clearScoresBtn"
-                            class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
-                        <i class="fas fa-eraser mr-2 group-scope-hover:rotate-6 transition-transform"></i> Clear Scores
-                    </button>
-                    <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="clearScoresTooltip"></i>
-                        <span class="tooltip-text" id="clearScoresTooltip">Clear all scores and start a new game with current players.</span>
                     </div>
                 </div>
 
@@ -510,26 +624,49 @@
                         <i class="fas fa-trophy mr-2 group-scope-hover:scale-110 transition-transform"></i> Finish Game & See Ranks
                     </button>
                     <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="endGameTooltip"></i>
+                        <button type="button" class="info-btn" data-tooltip-target="endGameTooltip" aria-describedby="endGameTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
                         <span class="tooltip-text" id="endGameTooltip">Declare winners.</span>
+                    </div>
+                </div>
+
+                <div class="bottom-divider" role="separator"></div>
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-orange-500/10 dark:group-hover:bg-orange-500/20">
+                    <button id="clearScoresBtn"
+                            class="bg-transparent border-2 border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-500/15 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-eraser mr-2 group-scope-hover:rotate-6 transition-transform"></i> Clear Scores
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <button type="button" class="info-btn" data-tooltip-target="clearScoresTooltip" aria-describedby="clearScoresTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
+                        <span class="tooltip-text" id="clearScoresTooltip">Clear all scores and start a new game with current players.</span>
                     </div>
                 </div>
 
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-gray-500/10 dark:group-hover:bg-gray-500/20">
                     <button id="resetGameBtn"
-                            class="bg-red-600 hover:bg-red-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                            class="bg-transparent border-2 border-red-500 text-red-600 dark:text-red-400 hover:bg-red-500/15 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
                         <i class="fas fa-trash mr-2 group-scope-hover:rotate-180 transition-transform"></i> Reset Game
                     </button>
                     <div class="tooltip-container ml-2">
-                        <i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" data-tooltip-target="resetGameTooltip"></i>
+                        <button type="button" class="info-btn" data-tooltip-target="resetGameTooltip" aria-describedby="resetGameTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
                         <span class="tooltip-text" id="resetGameTooltip">Clear all data and restart the game from scratch.</span>
+                    </div>
+                </div>
+
+                <div class="table-only-exit keep-in-table-view items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-gray-500/10 dark:group-hover:bg-gray-500/20">
+                    <button id="exitTableOnlyBtn" type="button"
+                            class="bg-gray-600 hover:bg-gray-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-compress mr-2 group-scope-hover:scale-110 transition-transform" aria-hidden="true"></i> Exit Table View
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <button type="button" class="info-btn" data-tooltip-target="exitTableOnlyTooltip" aria-describedby="exitTableOnlyTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
+                        <span class="tooltip-text" id="exitTableOnlyTooltip">Leave full screen and return to the normal view with all buttons.</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="winnerModal" class="modal">
+    <div id="winnerModal" class="modal" role="dialog" aria-modal="true" aria-label="Game results">
         <div class="modal-content text-center p-8 relative overflow-hidden">
             <span class="close-button">&times;</span>
             <h3 class="text-4xl md:text-5xl font-extrabold mb-6 text-yellow-500 dark:text-yellow-300 animate-pop-in">
@@ -547,7 +684,7 @@
         </div>
     </div>
 
-    <div id="confirmationModal" class="modal">
+    <div id="confirmationModal" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmationModalTitle" aria-describedby="confirmationModalMessage">
         <div class="modal-content text-center">
             <span class="close-button" id="closeConfirmationModal">&times;</span>
             <h3 class="text-2xl font-bold mb-4" id="confirmationModalTitle"></h3>
@@ -565,7 +702,7 @@
         </div>
     </div>
 
-    <div id="screenshotLoadingModal" class="modal">
+    <div id="screenshotLoadingModal" class="modal" role="status" aria-live="polite">
         <div class="modal-content text-center p-8">
             <i class="fas fa-spinner fa-spin text-5xl text-blue-500 mb-4"></i>
             <p class="text-xl font-semibold">Generating screenshot...</p>
@@ -579,7 +716,8 @@
         let gameState = {
             playerCount: 0,
             playerNames: [],
-            rounds: [] // Each round is an array of scores, e.g., [10, -5, 20]
+            rounds: [], // Each round is an array of scores, e.g., [10, -5, 20]
+            scoreMode: 'high' // 'high' = highest total wins, 'low' = lowest total wins
         };
 
         // Flag to track if we are in player name editing mode
@@ -615,6 +753,12 @@
         const hideShowRoundsText = document.getElementById('hideShowRoundsText');
         const hideShowRoundsTooltip = document.getElementById('hideShowRoundsTooltip');
         const endGameBtn = document.getElementById('endGameBtn');
+        const scoreModeBtn = document.getElementById('scoreModeBtn');
+        const scoreModeIcon = document.getElementById('scoreModeIcon');
+        const scoreModeText = document.getElementById('scoreModeText');
+        const scoreModeTooltip = document.getElementById('scoreModeTooltip');
+        const tableOnlyBtn = document.getElementById('tableOnlyBtn');
+        const exitTableOnlyBtn = document.getElementById('exitTableOnlyBtn');
 
         const winnerModal = document.getElementById('winnerModal');
         const closeWinnerModalBtn = document.querySelector('#winnerModal .close-button');
@@ -636,6 +780,10 @@
         const darkModeText = document.getElementById('darkModeText'); // Get the text element
 
         // --- Local Storage Functions ---
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        }
+
         function saveGameState() {
             localStorage.setItem('cardGameScores', JSON.stringify(gameState));
         }
@@ -643,8 +791,13 @@
         function loadGameState() {
             const savedState = localStorage.getItem('cardGameScores');
             if (savedState) {
-                gameState = JSON.parse(savedState);
+                try {
+                    gameState = Object.assign({ scoreMode: 'high' }, JSON.parse(savedState));
+                } catch (e) {
+                    console.error('Could not read saved game data:', e);
+                }
             }
+            if (gameState.scoreMode !== 'low') gameState.scoreMode = 'high';
         }
 
         // --- Screen Navigation Functions ---
@@ -685,7 +838,7 @@
                 div.className = 'flex flex-col';
                 div.innerHTML = `
                     <label for="player${i + 1}Name" class="mb-1 text-muted-foreground">Player ${i + 1} Name:</label>
-                    <input type="text" id="player${i + 1}Name" value="${gameState.playerNames[i] || ''}" placeholder="Player ${i + 1}"
+                    <input type="text" id="player${i + 1}Name" value="${escapeHtml(gameState.playerNames[i] || '')}" placeholder="Player ${i + 1}"
                            class="p-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent">
                 `;
                 playerInputsContainer.appendChild(div);
@@ -696,9 +849,11 @@
         function renderScoreboard() {
             // Reset currently editing state when re-rendering scoreboard
             currentlyEditingRoundIndex = null;
+            updateScoreModeUI();
+            scoreTable.style.setProperty('--n', Math.max(gameState.playerCount, 1)); // drives Table Only column sizing
 
             // Clear previous table content
-            scoreTable.querySelector('thead tr').innerHTML = '<th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg text-gray-800 dark:text-gray-200">Round</th>';
+            scoreTable.querySelector('thead tr').innerHTML = '<th class="p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-tl-lg text-gray-800 dark:text-gray-200"><span class="lbl-full">Round</span><span class="lbl-short" aria-label="Round">R</span></th>';
             scoreTableBody.innerHTML = '';
 
             // Add player names to header
@@ -725,6 +880,7 @@
             if (roundsHidden) {
                 applyHideShowRoundsState();
             }
+            fitTableOnly();
         }
 
         // --- Scoreboard Functions ---
@@ -737,14 +893,16 @@
             const isLatestRound = (roundNumber - 1) === (gameState.rounds.length - 1);
 
             const roundNumTd = document.createElement('td');
-            roundNumTd.className = 'p-3 border-r border-gray-200 dark:border-gray-700 font-semibold sticky-first-col flex items-center justify-between text-gray-800 dark:text-gray-200'; // Added text color classes
+            roundNumTd.className = 'p-3 border-r border-gray-200 dark:border-gray-700 font-semibold sticky-first-col text-gray-800 dark:text-gray-200'; // Added text color classes
             
             // Conditionally add 'latest-round-active' class for the latest round's icon
             const iconClass = isLatestRound ? 'fas fa-pencil-alt edit-icon text-base latest-round-active' : 'fas fa-pencil-alt edit-icon text-base';
 
             roundNumTd.innerHTML = `
-                <span>${roundNumber}</span>
-                <i class="${iconClass}" data-round-index="${roundNumber - 1}" aria-label="Edit Round ${roundNumber} Scores"></i>
+                <div class="flex items-center justify-between">
+                    <span>${roundNumber}</span>
+                    <i class="${iconClass}" data-round-index="${roundNumber - 1}" aria-label="Edit Round ${roundNumber} Scores" ${isLatestRound ? '' : 'role="button" tabindex="0"'}></i>
+                </div>
             `;
             tr.appendChild(roundNumTd);
 
@@ -764,7 +922,30 @@
                 // Inputs are enabled ONLY if it's the current absolute last round OR if it's the currently editing round
                 input.disabled = !isLatestRound && (currentlyEditingRoundIndex !== (roundNumber - 1));
                 
+                input.setAttribute('aria-label', `Round ${roundNumber} score for ${gameState.playerNames[i] || 'player ' + (i + 1)}`);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const next = Array.from(tr.querySelectorAll('input')).find((x, idx) => idx > i && !x.disabled);
+                    if (next) next.focus(); else input.blur();
+                });
+                td.classList.add('score-cell');
                 td.appendChild(input);
+                const signBtn = document.createElement('button');
+                signBtn.type = 'button';
+                signBtn.className = 'sign-btn';
+                signBtn.textContent = '\u00B1';
+                signBtn.setAttribute('aria-label', 'Switch between positive and negative');
+                signBtn.addEventListener('mousedown', (e) => e.preventDefault()); // keep the input focused
+                signBtn.addEventListener('click', () => {
+                    const v = parseInt(input.value, 10);
+                    if (!isNaN(v) && v !== 0 && !input.disabled) {
+                        input.value = -v;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    input.focus();
+                });
+                td.appendChild(signBtn);
                 tr.appendChild(td);
             }
             scoreTableBody.appendChild(tr);
@@ -774,6 +955,9 @@
                 // Only add click listener for non-latest rounds, as latest round is always editable
                 if (!isLatestRound) {
                     editIcon.addEventListener('click', handleEditRoundClick);
+                    editIcon.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEditRoundClick(e); }
+                    });
                 }
             }
         }
@@ -847,6 +1031,7 @@
             const playerHeader = scoreTable.querySelector(`thead th[data-player-index="${playerIndex}"]`);
 
             input.classList.add('highlight-input');
+            setTimeout(() => { try { input.select(); } catch (e) { /* ignore */ } }, 0);
             if (playerHeader) {
                 playerHeader.classList.add('highlight-player-header');
             }
@@ -883,7 +1068,7 @@
 
             const totalLabelTd = document.createElement('td');
             totalLabelTd.className = 'p-3 border-r border-gray-300 dark:border-gray-600 sticky-first-col rounded-bl-lg text-gray-800 dark:text-gray-200'; // Added text color classes
-            totalLabelTd.textContent = 'Totals';
+            totalLabelTd.innerHTML = '<span class="lbl-full">Totals</span><span class="lbl-short" aria-label="Totals">T:</span>';
             totalsRow.appendChild(totalLabelTd);
 
             let highestScore = -Infinity;
@@ -892,6 +1077,10 @@
                 highestScore = Math.max(...totals);
                 lowestScore = Math.min(...totals);
             }
+            // Green = best score, red = worst score. Which end is "best" depends on the game type.
+            const lowestWins = gameState.scoreMode === 'low';
+            const bestScore = lowestWins ? lowestScore : highestScore;
+            const worstScore = lowestWins ? highestScore : lowestScore;
 
             const playerHeaderCells = scoreTable.querySelectorAll('thead tr th:not(:first-child)');
 
@@ -911,18 +1100,35 @@
                 // Apply highlighting to total score cell and player name header
                 // only if not all scores are zero
                 if (!areAllScoresZero) {
-                    if (total === highestScore) {
+                    if (total === bestScore) {
                         td.classList.add('highlight-winner'); // Use generic custom class
                         playerHeaderCells[index].classList.add('highlight-winner'); // Use generic custom class
                     }
                     // Only apply loser highlight if it's genuinely the lowest and not also the highest (i.e., not all scores are the same)
-                    if (total === lowestScore && highestScore !== lowestScore) {
+                    if (total === worstScore && highestScore !== lowestScore) {
                         td.classList.add('highlight-loser'); // Use generic custom class
                         playerHeaderCells[index].classList.add('highlight-loser'); // Use generic custom class
                     }
                 }
                 totalsRow.appendChild(td);
             });
+            // Medal badges for the top 3 (ties share a rank); none while every total is equal
+            playerHeaderCells.forEach(th => { const old = th.querySelector('.rank-badge'); if (old) old.remove(); });
+            if (highestScore !== lowestScore) {
+                const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+                const places = ['1st place', '2nd place', '3rd place'];
+                totals.forEach((total, index) => {
+                    const ahead = totals.filter(t => lowestWins ? t < total : t > total).length;
+                    if (ahead < 3 && playerHeaderCells[index]) {
+                        const badge = document.createElement('span');
+                        badge.className = 'rank-badge';
+                        badge.setAttribute('role', 'img');
+                        badge.setAttribute('aria-label', places[ahead]);
+                        badge.textContent = medals[ahead];
+                        playerHeaderCells[index].appendChild(badge);
+                    }
+                });
+            }
             // Add rounded bottom-right corner to the last total cell
             totalsRow.querySelector('td:last-child').classList.add('rounded-br-lg');
 
@@ -1012,7 +1218,7 @@
         // Event listener for clicks on the document to manage tooltips
         document.addEventListener('click', (event) => {
             const clickedElement = event.target;
-            const isTooltipIcon = clickedElement.closest('.tooltip-container .fa-info-circle');
+            const isTooltipIcon = clickedElement.closest('.tooltip-container .info-btn');
             const isTooltipText = clickedElement.closest('.tooltip-text');
 
             if (isTooltipIcon) {
@@ -1034,13 +1240,16 @@
             }
         });
 
+        document.querySelectorAll('.tooltip-text').forEach(t => { if (!t.getAttribute('role')) t.setAttribute('role', 'tooltip'); });
+        document.querySelectorAll('.close-button').forEach(b => { b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Close'); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideAllTooltips(); });
+
         // Add event listeners for the dark mode toggle button to show/hide tooltip on hover
-        darkModeToggle.addEventListener('mouseenter', () => {
-            document.getElementById('darkModeToggleTooltip').classList.add('active');
-        });
-        darkModeToggle.addEventListener('mouseleave', () => {
-            document.getElementById('darkModeToggleTooltip').classList.remove('active');
-        });
+        const darkModeTooltip = document.getElementById('darkModeToggleTooltip');
+        if (darkModeTooltip) {
+            darkModeToggle.addEventListener('mouseenter', () => darkModeTooltip.classList.add('active'));
+            darkModeToggle.addEventListener('mouseleave', () => darkModeTooltip.classList.remove('active'));
+        }
 
 
         // --- Event Handlers ---
@@ -1138,6 +1347,9 @@
             updateTotals();
             // Scroll to the bottom to show the new round
             scoreTableBody.closest('.table-container').scrollTop = scoreTableBody.closest('.table-container').scrollHeight;
+            // Jump straight into the new round's first score box
+            const newRoundInput = scoreTableBody.querySelector(`tr[data-round-index="${gameState.rounds.length - 1}"] input`);
+            if (newRoundInput) newRoundInput.focus({ preventScroll: true });
         });
 
         editPlayerNamesBtn.addEventListener('click', () => {
@@ -1147,6 +1359,7 @@
 
         screenshotBtn.addEventListener('click', () => {
             screenshotLoadingModal.style.display = 'flex'; // Show loading modal
+            document.body.classList.add('capturing'); // Un-freeze sticky cells for a complete capture
 
             const tableContainer = document.querySelector('.table-container');
             const scoreTableElement = document.getElementById('scoreTable');
@@ -1183,6 +1396,7 @@
                 width: scoreTableElement.scrollWidth,
                 height: scoreTableElement.scrollHeight,
             }).then(canvas => {
+                document.body.classList.remove('capturing');
                 // Restore original styles
                 tableContainer.style.maxHeight = originalMaxHeight;
                 tableContainer.style.overflow = originalOverflow;
@@ -1207,6 +1421,7 @@
                 document.body.removeChild(link);
             }).catch(error => {
                 console.error("Error generating screenshot:", error);
+                document.body.classList.remove('capturing');
                 // Restore original styles even on error
                 tableContainer.style.maxHeight = originalMaxHeight;
                 tableContainer.style.overflow = originalOverflow;
@@ -1240,7 +1455,8 @@
                     gameState = {
                         playerCount: 0,
                         playerNames: [],
-                        rounds: []
+                        rounds: [],
+                        scoreMode: 'high'
                     };
                     isEditingPlayerNames = false; // Reset flag
                     renderPlayerCountScreen(); // Go back to the very first screen
@@ -1278,6 +1494,7 @@
         hideShowRoundsBtn.addEventListener('click', () => {
             roundsHidden = !roundsHidden; // Toggle the state
             applyHideShowRoundsState(); // Apply the new state
+            fitTableOnly();
         });
 
         endGameBtn.addEventListener('click', () => {
@@ -1304,8 +1521,8 @@
                 originalIndex: index
             }));
 
-            // Sort players by score in descending order
-            playerScores.sort((a, b) => b.score - a.score);
+            // Sort best-first: descending when highest wins, ascending when lowest wins
+            playerScores.sort((a, b) => gameState.scoreMode === 'low' ? a.score - b.score : b.score - a.score);
 
             winnerResultsDiv.innerHTML = ''; // Clear previous results
 
@@ -1316,7 +1533,7 @@
                         
                         <span class="text-4xl md:text-6xl">&#x1F947;</span>
                         <p class="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
-                            Winner: ${playerScores[0].name} (${playerScores[0].score})
+                            Winner: ${escapeHtml(playerScores[0].name)} (${playerScores[0].score})
                         </p>
                        
                     </div>
@@ -1327,7 +1544,7 @@
                     <div class="flex items-center justify-center space-x-3 animate-bounce-in-2">
                         <span class="text-4xl md:text-5xl">&#x1F948;</span>
                         <p class="text-xl md:text-2xl font-semibold text-blue-600 dark:text-blue-400">
-                            2nd Place: ${playerScores[1].name} (${playerScores[1].score})
+                            2nd Place: ${escapeHtml(playerScores[1].name)} (${playerScores[1].score})
                         </p>
                     </div>
                 `;
@@ -1337,7 +1554,7 @@
                     <div class="flex items-center justify-center space-x-3 animate-bounce-in-3">
                         <span class="text-3xl md:text-4xl">&#x1F949;</span>
                         <p class="text-lg md:text-xl text-purple-600 dark:text-purple-400">
-                            3rd Place: ${playerScores[2].name} (${playerScores[2].score})
+                            3rd Place: ${escapeHtml(playerScores[2].name)} (${playerScores[2].score})
                         </p>
                     </div>
                 `;
@@ -1356,6 +1573,166 @@
         window.addEventListener('click', (event) => {
             if (event.target == winnerModal) {
                 winnerModal.style.display = 'none';
+            }
+        });
+
+        // --- Dialog accessibility: move focus in, trap Tab, Esc to close, restore focus on close ---
+        let focusBeforeModal = null;
+        const a11yModals = [winnerModal, confirmationModal];
+        function openModalEl() { return a11yModals.find(m => m.style.display === 'flex') || null; }
+        const modalObserver = new MutationObserver((mutations) => {
+            mutations.forEach(({ target }) => {
+                if (target.style.display === 'flex') {
+                    focusBeforeModal = document.activeElement;
+                    const first = target === confirmationModal
+                        ? (cancelActionButton.classList.contains('hidden') ? confirmActionButton : cancelActionButton)
+                        : closeWinnerModalBtn2;
+                    first.focus();
+                } else if (focusBeforeModal && !openModalEl()) {
+                    if (focusBeforeModal.focus) focusBeforeModal.focus();
+                    focusBeforeModal = null;
+                }
+            });
+        });
+        a11yModals.forEach(m => modalObserver.observe(m, { attributes: true, attributeFilter: ['style'] }));
+        document.addEventListener('keydown', (e) => {
+            const m = openModalEl();
+            if (!m) return;
+            if (e.key === 'Escape') {
+                (m === confirmationModal ? closeConfirmationModalBtn : closeWinnerModalBtn).click();
+            } else if (e.key === 'Tab') {
+                const f = Array.from(m.querySelectorAll('button')).filter(b => b.offsetParent !== null);
+                if (!f.length) return;
+                const first = f[0], last = f[f.length - 1];
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        });
+
+        // --- Keep the screen awake while in Table Only view ---
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator && !wakeLock) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                }
+            } catch (e) { /* not supported or denied: ignore */ }
+        }
+        function releaseWakeLock() {
+            try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) { /* ignore */ }
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && isTableOnly()) requestWakeLock();
+        });
+
+        // --- Feature: Highest Wins / Lowest Wins toggle ---
+        function updateScoreModeUI() {
+            const lowestWins = gameState.scoreMode === 'low';
+            scoreModeText.textContent = lowestWins ? 'Lowest Wins' : 'Highest Wins';
+            scoreModeIcon.className = 'fas ' + (lowestWins ? 'fa-arrow-down' : 'fa-arrow-up') + ' mr-2';
+            scoreModeTooltip.textContent = lowestWins
+                ? 'Currently: lowest score is highlighted green, highest is red. Tap to switch to Highest Wins.'
+                : 'Currently: highest score is highlighted green, lowest is red. Tap to switch to Lowest Wins.';
+            scoreModeBtn.setAttribute('aria-label', scoreModeText.textContent + '. Activate to switch scoring mode.');
+        }
+
+        scoreModeBtn.addEventListener('click', () => {
+            gameState.scoreMode = gameState.scoreMode === 'low' ? 'high' : 'low';
+            saveGameState();
+            updateScoreModeUI();
+            updateTotals();
+        });
+
+        // --- Feature: Table Only (full screen) view ---
+        function isTableOnly() {
+            return document.body.classList.contains('table-only');
+        }
+
+        function enterTableOnly() {
+            document.body.classList.add('table-only');
+            requestWakeLock();
+            hideAllTooltips();
+            fitTableOnly();
+            // Progressive enhancement: real browser fullscreen where supported (not on iPhone Safari)
+            try {
+                const el = document.documentElement;
+                if (!document.fullscreenElement && el.requestFullscreen) {
+                    const result = el.requestFullscreen();
+                    if (result && result.catch) result.catch(() => {});
+                }
+            } catch (e) { /* the full-page layout still works without native fullscreen */ }
+            exitTableOnlyBtn.focus();
+        }
+
+        function exitTableOnly() {
+            document.body.classList.remove('table-only');
+            releaseWakeLock();
+            hideAllTooltips();
+            fitTableOnly();
+            try {
+                if (document.fullscreenElement && document.exitFullscreen) {
+                    const result = document.exitFullscreen();
+                    if (result && result.catch) result.catch(() => {});
+                }
+            } catch (e) { /* ignore */ }
+            tableOnlyBtn.focus();
+        }
+
+        // When few rows are visible (e.g. Hide Old Rounds), stretch the rows to fill the spare
+        // screen height and enlarge the text to match. With many rows the default sizing applies.
+        function fitTableOnly() {
+            scoreTable.style.removeProperty('--row-h');
+            scoreTable.style.removeProperty('--fit-font');
+            if (!isTableOnly()) return;
+            const wrap = scoreTable.closest('.table-container');
+            const rows = Array.from(scoreTableBody.querySelectorAll('tr:not(#totalsRow):not(.hidden)'));
+            const totalsRow = document.getElementById('totalsRow');
+            if (!wrap || !wrap.clientHeight || rows.length === 0) return;
+
+            const head = scoreTable.tHead.offsetHeight;
+            const foot = totalsRow ? totalsRow.offsetHeight : 0;
+            const natural = rows.reduce((sum, r) => sum + r.offsetHeight, 0);
+            let avail = wrap.clientHeight - head - foot;
+            if (natural >= avail) return; // no spare height: leave default sizing (table scrolls)
+
+            const n = Math.max(gameState.playerCount, 1);
+            const widthLimit = (window.innerWidth - 76) / n / 3.6;           // keep scores inside the column
+            const apply = (rowH) => {
+                const font = Math.max(12, Math.min(rowH * 0.42, widthLimit, 96));
+                scoreTable.style.setProperty('--row-h', rowH + 'px');
+                scoreTable.style.setProperty('--fit-font', font + 'px');
+            };
+            let rowH = Math.floor(avail / rows.length);
+            apply(rowH);
+            // Header/totals grow with the font, so trim if the table now overflows
+            const over = wrap.scrollHeight - wrap.clientHeight;
+            if (over > 0) apply(Math.max(0, rowH - Math.ceil(over / rows.length) - 1));
+        }
+
+        let fitQueued = false;
+        function queueFitTableOnly() {
+            if (fitQueued) return;
+            fitQueued = true;
+            requestAnimationFrame(() => { fitQueued = false; fitTableOnly(); });
+        }
+        window.addEventListener('resize', queueFitTableOnly);
+
+        tableOnlyBtn.addEventListener('click', enterTableOnly);
+        exitTableOnlyBtn.addEventListener('click', exitTableOnly);
+
+        // If the user leaves native fullscreen (e.g. presses Esc), leave table-only view too
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && isTableOnly()) {
+                document.body.classList.remove('table-only');
+                releaseWakeLock();
+            }
+            queueFitTableOnly();
+        });
+        // Esc also exits when native fullscreen isn't available
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && isTableOnly() && confirmationModal.style.display !== 'flex' && winnerModal.style.display !== 'flex') {
+                exitTableOnly();
             }
         });
 
