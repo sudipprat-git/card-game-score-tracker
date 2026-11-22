@@ -1654,10 +1654,13 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             requestWakeLock();
             hideAllTooltips();
             fitTableOnly();
-            // Progressive enhancement: real browser fullscreen where supported (not on iPhone Safari)
+            // Progressive enhancement: real browser fullscreen on non-touch devices only.
+            // On touch devices (iPad etc.) the on-screen keyboard forces Safari out of native fullscreen
+            // whenever a score box is focused, so the full-page layout is used there instead.
             try {
                 const el = document.documentElement;
-                if (!document.fullscreenElement && el.requestFullscreen) {
+                const isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+                if (!isTouch && !document.fullscreenElement && el.requestFullscreen) {
                     const result = el.requestFullscreen();
                     if (result && result.catch) result.catch(() => {});
                 }
@@ -1723,7 +1726,11 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
 
         // If the user leaves native fullscreen (e.g. presses Esc), leave table-only view too
         document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement && isTableOnly()) {
+            // Don't leave Table Only view just because a browser dropped native fullscreen while a
+            // score box is being edited (e.g. the keyboard opening); the Exit button still works.
+            const editingScore = document.activeElement && document.activeElement.matches &&
+                document.activeElement.matches('#scoreTable input');
+            if (!document.fullscreenElement && isTableOnly() && !editingScore) {
                 document.body.classList.remove('table-only');
                 releaseWakeLock();
             }
