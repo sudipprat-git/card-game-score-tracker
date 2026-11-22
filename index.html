@@ -414,6 +414,36 @@ body.capturing .scoreboard-static td { position: static !important; box-shadow: 
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 
+/* ---- Winners podium ---- */
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
+.podium-col { flex: 1 1 0; max-width: 9.5rem; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.podium-medal { font-size: 2.25rem; line-height: 1; }
+.podium-col.first .podium-medal { font-size: 3rem; }
+.podium-name { font-weight: 700; font-size: 1rem; max-width: 100%; overflow-wrap: anywhere; line-height: 1.2; margin-top: 0.25rem; }
+.podium-score { font-size: 0.95rem; opacity: 0.85; margin-bottom: 0.35rem; }
+.podium-block {
+    width: 100%; display: flex; align-items: flex-start; justify-content: center; padding-top: 0.4rem;
+    border-radius: 0.5rem 0.5rem 0 0; font-weight: 800; color: #1f2937;
+    transform-origin: bottom; animation: podiumRise 0.7s ease-out both;
+}
+.podium-block.gold { height: 7rem; background: linear-gradient(#fde68a, #f5c542); animation-delay: 0.5s; }
+.podium-block.silver { height: 5rem; background: linear-gradient(#e5e7eb, #b6bfcc); animation-delay: 0.25s; }
+.podium-block.bronze { height: 3.5rem; background: linear-gradient(#f3c9a0, #d6975b); animation-delay: 0s; }
+.podium-tag { font-size: 0.8rem; margin-top: 0.4rem; min-height: 2.2em; line-height: 1.15; }
+@keyframes podiumRise { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+#confettiCanvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1100; display: none; }
+
+/* ---- Undo toast ---- */
+.undo-toast {
+    position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 1200;
+    display: flex; align-items: center; gap: 0.9rem; max-width: calc(100% - 2rem);
+    background: #1f2937; color: #ffffff; padding: 0.65rem 1rem; border-radius: 0.6rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35); font-size: 0.95rem;
+}
+.undo-toast[hidden] { display: none; }
+.undo-toast button { background: none; border: 0; color: #93c5fd; font-weight: 700; text-transform: none; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 0.35rem; }
+.undo-toast button:hover { text-decoration: underline; }
+
 /* Short header labels are only used in Table Only view */
 .lbl-short { display: none; }
 body.table-only .lbl-full { display: none; }
@@ -630,6 +660,26 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 </div>
 
                 <div class="bottom-divider" role="separator"></div>
+                <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-slate-500/10 dark:group-hover:bg-slate-500/20">
+                    <button id="undoBtn" type="button"
+                            class="bg-transparent border-2 border-slate-500 text-slate-700 dark:text-slate-200 hover:bg-slate-500/15 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-undo mr-2" aria-hidden="true"></i> Undo
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <button type="button" class="info-btn" data-tooltip-target="undoTooltip" aria-describedby="undoTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
+                        <span class="tooltip-text" id="undoTooltip" role="tooltip">Undo the last Clear Scores, Reset Game or Remove Last Round. Available until you make another change.</span>
+                    </div>
+                </div>
+                <div class="keep-in-table-view flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-slate-500/10 dark:group-hover:bg-slate-500/20">
+                    <button id="removeLastRoundBtn" type="button"
+                            class="bg-transparent border-2 border-slate-500 text-slate-700 dark:text-slate-200 hover:bg-slate-500/15 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
+                        <i class="fas fa-minus-circle mr-2" aria-hidden="true"></i> Remove Last Round
+                    </button>
+                    <div class="tooltip-container ml-2">
+                        <button type="button" class="info-btn" data-tooltip-target="removeLastRoundTooltip" aria-describedby="removeLastRoundTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
+                        <span class="tooltip-text" id="removeLastRoundTooltip" role="tooltip">Delete the most recent round. You can undo it straight away.</span>
+                    </div>
+                </div>
                 <div class="flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-orange-500/10 dark:group-hover:bg-orange-500/20">
                     <button id="clearScoresBtn"
                             class="bg-transparent border-2 border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-500/15 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
@@ -672,7 +722,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             <h3 class="text-4xl md:text-5xl font-extrabold mb-6 text-yellow-500 dark:text-yellow-300 animate-pop-in">
                 <i class="fas fa-crown mr-2"></i> Congratulations! <i class="fas fa-trophy ml-2"></i>
             </h3>
-            <p class="text-xl md:text-2xl font-semibold mb-8 text-teal dark:text-gray-800 animate-fade-in">
+            <p class="text-xl md:text-2xl font-semibold mb-8 text-gray-700 dark:text-gray-200 animate-fade-in">
                 What an epic battle! Here are today's champions!
             </p>
             <div id="winnerResults" class="space-y-6 text-lg">
@@ -707,6 +757,12 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             <i class="fas fa-spinner fa-spin text-5xl text-blue-500 mb-4"></i>
             <p class="text-xl font-semibold">Generating screenshot...</p>
         </div>
+    </div>
+
+    <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+    <div id="undoToast" class="undo-toast" role="status" aria-live="polite" hidden>
+        <span id="undoToastText"></span>
+        <button type="button" id="undoToastBtn">Undo</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -785,6 +841,8 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
         }
 
         function saveGameState() {
+            undoSnapshot = null; // any new change makes the previous undo point stale
+            refreshUndoUI();
             localStorage.setItem('cardGameScores', JSON.stringify(gameState));
         }
 
@@ -1459,9 +1517,11 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 'Clear All Scores?',
                 'Are you sure? This will wipe the slate clean for all players, resetting every score to zero. This can\'t be undone.',
                 () => {
-                    gameState.rounds = [];
-                    saveGameState();
-                    renderScoreboard(); // Re-render to clear table rows
+                    performUndoable('Scores cleared', () => {
+                        gameState.rounds = [];
+                        saveGameState();
+                        renderScoreboard(); // Re-render to clear table rows
+                    });
                 }
             );
         });
@@ -1471,15 +1531,17 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 'Reset Game?',
                 'Start from scratch? This will erase all players and scores permanently, taking you back to the very beginning. Are you ready for a fresh start?',
                 () => {
-                    localStorage.removeItem('cardGameScores');
-                    gameState = {
-                        playerCount: 0,
-                        playerNames: [],
-                        rounds: [],
-                        scoreMode: 'high'
-                    };
-                    isEditingPlayerNames = false; // Reset flag
-                    renderPlayerCountScreen(); // Go back to the very first screen
+                    performUndoable('Game reset', () => {
+                        localStorage.removeItem('cardGameScores');
+                        gameState = {
+                            playerCount: 0,
+                            playerNames: [],
+                            rounds: [],
+                            scoreMode: 'high'
+                        };
+                        isEditingPlayerNames = false; // Reset flag
+                        renderPlayerCountScreen(); // Go back to the very first screen
+                    });
                 }
             );
         });
@@ -1546,41 +1608,23 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
 
             winnerResultsDiv.innerHTML = ''; // Clear previous results
 
-            // Display results
-            if (playerScores.length > 0) {
-                winnerResultsDiv.innerHTML += `
-                    <div class="flex items-center justify-center space-x-4 animate-bounce-in-1">
-                        
-                        <span class="text-4xl md:text-6xl">&#x1F947;</span>
-                        <p class="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
-                            Winner: ${escapeHtml(playerScores[0].name)} (${playerScores[0].score})
-                        </p>
-                       
-                    </div>
-                `;
-            }
-            if (playerScores.length > 1) {
-                winnerResultsDiv.innerHTML += `
-                    <div class="flex items-center justify-center space-x-3 animate-bounce-in-2">
-                        <span class="text-4xl md:text-5xl">&#x1F948;</span>
-                        <p class="text-xl md:text-2xl font-semibold text-blue-600 dark:text-blue-400">
-                            2nd Place: ${escapeHtml(playerScores[1].name)} (${playerScores[1].score})
-                        </p>
-                    </div>
-                `;
-            }
-            if (playerScores.length > 2) {
-                winnerResultsDiv.innerHTML += `
-                    <div class="flex items-center justify-center space-x-3 animate-bounce-in-3">
-                        <span class="text-3xl md:text-4xl">&#x1F949;</span>
-                        <p class="text-lg md:text-xl text-purple-600 dark:text-purple-400">
-                            3rd Place: ${escapeHtml(playerScores[2].name)} (${playerScores[2].score})
-                        </p>
-                    </div>
-                `;
-            }
+            // Display results as a podium (2nd | 1st | 3rd)
+            const slots = [
+                { idx: 1, cls: 'silver', medal: '\u{1F948}', label: '2nd', tag: '\u{1F62C} So close!' },
+                { idx: 0, cls: 'gold',   medal: '\u{1F947}', label: '1st', tag: '\u{1F988} Card Shark!', first: true },
+                { idx: 2, cls: 'bronze', medal: '\u{1F949}', label: '3rd', tag: '\u{1F389} Still a medal!' }
+            ].filter(slot => playerScores[slot.idx]);
+            winnerResultsDiv.innerHTML = '<div class="podium">' + slots.map(slot => `
+                <div class="podium-col ${slot.first ? 'first' : ''}">
+                    <div class="podium-medal" aria-hidden="true">${slot.medal}</div>
+                    <div class="podium-name">${escapeHtml(playerScores[slot.idx].name)}</div>
+                    <div class="podium-score">${playerScores[slot.idx].score} pts</div>
+                    <div class="podium-block ${slot.cls}"><span>${slot.label}</span></div>
+                    <div class="podium-tag">${slot.tag}</div>
+                </div>`).join('') + '</div>';
 
             winnerModal.style.display = 'flex'; // Show the modal
+            launchConfetti();
         });
 
         // Close modal event listeners
@@ -1628,6 +1672,105 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
             }
         });
+
+        // --- Confetti (lightweight canvas, no library) ---
+        const confettiCanvas = document.getElementById('confettiCanvas');
+        let confettiRun = 0;
+        function launchConfetti() {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const ctx = confettiCanvas.getContext && confettiCanvas.getContext('2d');
+            if (!ctx) return;
+            const runId = ++confettiRun;
+            const W = window.innerWidth, H = window.innerHeight, dpr = window.devicePixelRatio || 1;
+            confettiCanvas.width = W * dpr; confettiCanvas.height = H * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            confettiCanvas.style.display = 'block';
+            const colors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#a855f7', '#ec4899', '#facc15'];
+            const pieces = Array.from({ length: Math.min(170, Math.round(W / 5)) }, () => ({
+                x: Math.random() * W, y: -Math.random() * H * 0.7,
+                w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+                vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 3,
+                rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.3,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            }));
+            const DURATION = 5000;
+            const start = performance.now();
+            function frame(now) {
+                const elapsed = now - start;
+                if (runId !== confettiRun || winnerModal.style.display !== 'flex' || elapsed > DURATION) {
+                    if (runId === confettiRun) { ctx.clearRect(0, 0, W, H); confettiCanvas.style.display = 'none'; }
+                    return;
+                }
+                ctx.clearRect(0, 0, W, H);
+                const alpha = Math.max(0, Math.min(1, (DURATION - elapsed) / 1000));
+                pieces.forEach(pc => {
+                    pc.x += pc.vx; pc.y += pc.vy; pc.vy += 0.04; pc.rot += pc.vr;
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.translate(pc.x, pc.y); ctx.rotate(pc.rot);
+                    ctx.fillStyle = pc.color; ctx.fillRect(-pc.w / 2, -pc.h / 2, pc.w, pc.h);
+                    ctx.restore();
+                });
+                requestAnimationFrame(frame);
+            }
+            requestAnimationFrame(frame);
+        }
+
+        // --- Undo (Clear Scores, Reset Game, Remove Last Round) ---
+        // One level of undo. It stays available until the next change is saved (score edit, new round, rename...).
+        const undoBtn = document.getElementById('undoBtn');
+        const removeLastRoundBtn = document.getElementById('removeLastRoundBtn');
+        const undoToast = document.getElementById('undoToast');
+        const undoToastText = document.getElementById('undoToastText');
+        const undoToastBtn = document.getElementById('undoToastBtn');
+        let undoSnapshot = null;
+        let undoToastTimer = null;
+
+        function hideUndoToast() { undoToast.hidden = true; clearTimeout(undoToastTimer); }
+        function showUndoToast(text) {
+            undoToastText.textContent = text;
+            undoToast.hidden = false;
+            clearTimeout(undoToastTimer);
+            undoToastTimer = setTimeout(hideUndoToast, 10000);
+        }
+        function refreshUndoUI() {
+            undoBtn.disabled = !undoSnapshot;
+            if (!undoSnapshot) hideUndoToast();
+        }
+        function performUndoable(label, action) {
+            const before = JSON.stringify(gameState);
+            action();
+            undoSnapshot = { before, label };
+            refreshUndoUI();
+            showUndoToast(label + '.');
+        }
+        function undoLastAction() {
+            if (!undoSnapshot) return;
+            const before = undoSnapshot.before;
+            let restored;
+            try { restored = Object.assign({ scoreMode: 'high' }, JSON.parse(before)); } catch (e) { return; }
+            gameState = restored;
+            if (gameState.scoreMode !== 'low') gameState.scoreMode = 'high';
+            isEditingPlayerNames = false;
+            saveGameState(); // also clears the undo snapshot
+            if (gameState.playerCount > 0 && gameState.playerNames.length === gameState.playerCount) renderScoreboard();
+            else if (gameState.playerCount > 0) renderPlayerNamesScreen();
+            else renderPlayerCountScreen();
+        }
+        undoBtn.addEventListener('click', undoLastAction);
+        undoToastBtn.addEventListener('click', undoLastAction);
+        removeLastRoundBtn.addEventListener('click', () => {
+            if (gameState.rounds.length === 0) {
+                showAlertDialog('No rounds to remove', 'There are no rounds on the scoreboard yet.');
+                return;
+            }
+            performUndoable('Last round removed', () => {
+                gameState.rounds.pop();
+                saveGameState();
+                renderScoreboard();
+            });
+        });
+        refreshUndoUI();
 
         // --- Keep the screen awake while in Table Only view ---
         let wakeLock = null;
