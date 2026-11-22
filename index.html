@@ -1349,7 +1349,13 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             scoreTableBody.closest('.table-container').scrollTop = scoreTableBody.closest('.table-container').scrollHeight;
             // Jump straight into the new round's first score box
             const newRoundInput = scoreTableBody.querySelector(`tr[data-round-index="${gameState.rounds.length - 1}"] input`);
-            if (newRoundInput) newRoundInput.focus({ preventScroll: true });
+            if (isTableOnly() && isTouchDevice()) {
+                // Opening the keyboard would drop fullscreen; tapping Add Round is a user gesture,
+                // so use it to (re-)enter fullscreen. Tap a score box when you want to type.
+                requestNativeFullscreen();
+            } else if (newRoundInput) {
+                newRoundInput.focus({ preventScroll: true });
+            }
         });
 
         editPlayerNamesBtn.addEventListener('click', () => {
@@ -1649,22 +1655,40 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             return document.body.classList.contains('table-only');
         }
 
+        // --- Native fullscreen helpers (with WebKit-prefixed fallbacks used by iPad browsers) ---
+        function nativeFullscreenElement() {
+            return document.fullscreenElement || document.webkitFullscreenElement || null;
+        }
+        function isTouchDevice() {
+            return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+        }
+        function requestNativeFullscreen() {
+            try {
+                const el = document.documentElement;
+                const request = el.requestFullscreen || el.webkitRequestFullscreen;
+                if (request && !nativeFullscreenElement()) {
+                    const result = request.call(el);
+                    if (result && result.catch) result.catch(() => {});
+                }
+            } catch (e) { /* the full-page layout still works without native fullscreen */ }
+        }
+        function exitNativeFullscreen() {
+            try {
+                const exit = document.exitFullscreen || document.webkitExitFullscreen;
+                if (nativeFullscreenElement() && exit) {
+                    const result = exit.call(document);
+                    if (result && result.catch) result.catch(() => {});
+                }
+            } catch (e) { /* ignore */ }
+        }
+
         function enterTableOnly() {
             document.body.classList.add('table-only');
             requestWakeLock();
             hideAllTooltips();
             fitTableOnly();
-            // Progressive enhancement: real browser fullscreen on non-touch devices only.
-            // On touch devices (iPad etc.) the on-screen keyboard forces Safari out of native fullscreen
-            // whenever a score box is focused, so the full-page layout is used there instead.
-            try {
-                const el = document.documentElement;
-                const isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-                if (!isTouch && !document.fullscreenElement && el.requestFullscreen) {
-                    const result = el.requestFullscreen();
-                    if (result && result.catch) result.catch(() => {});
-                }
-            } catch (e) { /* the full-page layout still works without native fullscreen */ }
+            // Real browser fullscreen (hides the address bar) wherever the browser allows it.
+            requestNativeFullscreen();
             exitTableOnlyBtn.focus();
         }
 
@@ -1673,12 +1697,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             releaseWakeLock();
             hideAllTooltips();
             fitTableOnly();
-            try {
-                if (document.fullscreenElement && document.exitFullscreen) {
-                    const result = document.exitFullscreen();
-                    if (result && result.catch) result.catch(() => {});
-                }
-            } catch (e) { /* ignore */ }
+            exitNativeFullscreen();
             tableOnlyBtn.focus();
         }
 
@@ -1724,18 +1743,20 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
         tableOnlyBtn.addEventListener('click', enterTableOnly);
         exitTableOnlyBtn.addEventListener('click', exitTableOnly);
 
-        // If the user leaves native fullscreen (e.g. presses Esc), leave table-only view too
-        document.addEventListener('fullscreenchange', () => {
-            // Don't leave Table Only view just because a browser dropped native fullscreen while a
-            // score box is being edited (e.g. the keyboard opening); the Exit button still works.
+        // If the user leaves native fullscreen with Esc on a desktop, leave table-only view too.
+        // On touch devices the browser drops fullscreen when the keyboard opens for a score box,
+        // so there the table-only layout stays and only the Exit button leaves it.
+        function onFullscreenChange() {
             const editingScore = document.activeElement && document.activeElement.matches &&
                 document.activeElement.matches('#scoreTable input');
-            if (!document.fullscreenElement && isTableOnly() && !editingScore) {
+            if (!nativeFullscreenElement() && isTableOnly() && !editingScore && !isTouchDevice()) {
                 document.body.classList.remove('table-only');
                 releaseWakeLock();
             }
             queueFitTableOnly();
-        });
+        }
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', onFullscreenChange);
         // Esc also exits when native fullscreen isn't available
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && isTableOnly() && confirmationModal.style.display !== 'flex' && winnerModal.style.display !== 'flex') {
