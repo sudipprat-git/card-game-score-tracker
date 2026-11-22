@@ -502,6 +502,60 @@ body.table-only #scoreTable #totalsRow td { font-size: 1.1em; padding-top: 0.3re
 body.table-only #bottomControls > div { padding: 0.15rem; }
 body.table-only #bottomControls button { padding: 0.35rem 0.75rem; font-size: 0.95rem; }
 body.table-only #bottomControls > .primary-row { flex-basis: auto; }
+
+/* ---- Table Only: concise, single-line, tidy ---- */
+body.table-only .app-card { padding: 0.4rem; gap: 0.4rem; }
+body.table-only .scoreboard-static .table-container { border: 1px solid #cbd5e1; border-radius: 0.6rem; }
+body.table-only #scoreTable {
+    border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums;
+    font-size: var(--fit-font, clamp(0.75rem, calc((100vw - 4.6rem) / var(--n, 4) / var(--chars, 3.6)), 1.75rem));
+}
+body.table-only #scoreTable th,
+body.table-only #scoreTable td {
+    border: 0 !important;
+    border-bottom: 1px solid #d9dee5 !important;
+    border-right: 1px solid #e3e7ec !important;
+    white-space: nowrap; overflow: hidden;
+}
+/* Header: one line per name, truncated with an ellipsis (full name shows on hover/long-press) */
+body.table-only #scoreTable thead th {
+    font-size: clamp(0.72rem, 0.6em, 1.05rem);
+    padding: 0.4rem 0.25rem; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    overflow-wrap: normal; word-break: normal; hyphens: none;
+}
+body.table-only #scoreTable thead th:not(.highlight-winner):not(.highlight-loser) { background-color: #e2e8f0 !important; }
+body.table-only #scoreTable thead th::before { content: none; }     /* medal badge already marks the leaders */
+body.table-only #scoreTable .rank-badge { display: inline; font-size: 1em; margin-right: 0.2em; }
+/* Round column: fixed, readable size so numbers never spill into the next cell */
+body.table-only #scoreTable th.sticky-first-col,
+body.table-only #scoreTable td.sticky-first-col { width: 3.4rem; padding-left: 0.2rem; padding-right: 0.2rem; text-align: center; }
+body.table-only #scoreTable thead th.sticky-first-col { font-size: 0.85rem; }
+body.table-only #scoreTable td.sticky-first-col { font-size: 0.95rem; font-weight: 700; }
+body.table-only #scoreTable td.sticky-first-col > div { flex-wrap: nowrap; justify-content: center; align-items: center; gap: 0.3rem; }
+body.table-only #scoreTable .edit-icon { font-size: 0.8rem; }
+/* Score boxes: editable (latest) round looks like a field, locked rounds read as plain text */
+body.table-only #scoreTable input {
+    box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0;
+    padding: 0.15rem 0; border: 1px solid transparent; border-radius: 0.4rem; background: transparent;
+    text-overflow: clip;
+}
+body.table-only #scoreTable input:not(:disabled) { background: #ffffff; border-color: #94a3b8; }
+body.table-only #scoreTable input:disabled { opacity: 1; -webkit-text-fill-color: #000000; }
+/* Totals row */
+body.table-only #scoreTable #totalsRow td { font-weight: 800; font-size: 1.05em; text-overflow: clip; border-top: 2px solid #94a3b8 !important; }
+body.table-only #scoreTable #totalsRow td:not(.highlight-winner):not(.highlight-loser) { background-color: #e2e8f0 !important; }
+/* Toolbar: one compact row — Remove | Add Round | Exit */
+body.table-only #bottomControls { display: flex; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 0.5rem; margin: 0; padding-top: 0.1rem; }
+body.table-only #bottomControls > div { padding: 0; flex: 0 1 auto; }
+body.table-only #bottomControls .tooltip-container { display: none; }
+body.table-only #bottomControls button {
+    height: 2.4rem; padding: 0 0.9rem; font-size: 0.9rem; border-radius: 0.55rem; white-space: nowrap; transform: none; box-shadow: none;
+}
+body.table-only #bottomControls button i { margin-right: 0.35rem; }
+body.table-only #bottomControls > .remove-round-group { order: 1; }
+body.table-only #bottomControls > .primary-row { order: 2; }
+body.table-only #bottomControls > .table-only-exit { order: 3; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-8 px-4 transition-colors duration-300">
@@ -670,10 +724,10 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                         <span class="tooltip-text" id="undoTooltip" role="tooltip">Undo the last Clear Scores, Reset Game or Remove Last Round. Available until you make another change.</span>
                     </div>
                 </div>
-                <div class="keep-in-table-view flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-slate-500/10 dark:group-hover:bg-slate-500/20">
+                <div class="remove-round-group keep-in-table-view flex items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-slate-500/10 dark:group-hover:bg-slate-500/20">
                     <button id="removeLastRoundBtn" type="button"
                             class="bg-transparent border-2 border-slate-500 text-slate-700 dark:text-slate-200 hover:bg-slate-500/15 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
-                        <i class="fas fa-minus-circle mr-2" aria-hidden="true"></i> Remove Last Round
+                        <i class="fas fa-minus-circle mr-2" aria-hidden="true"></i> <span class="lbl-full">Remove Last Round</span><span class="lbl-short">Remove Last</span>
                     </button>
                     <div class="tooltip-container ml-2">
                         <button type="button" class="info-btn" data-tooltip-target="removeLastRoundTooltip" aria-describedby="removeLastRoundTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
@@ -705,7 +759,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 <div class="table-only-exit keep-in-table-view items-center group rounded-lg p-2 transition-colors duration-300 group-hover:bg-gray-500/10 dark:group-hover:bg-gray-500/20">
                     <button id="exitTableOnlyBtn" type="button"
                             class="bg-gray-600 hover:bg-gray-800 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center group-scope text-sm md:text-base">
-                        <i class="fas fa-compress mr-2 group-scope-hover:scale-110 transition-transform" aria-hidden="true"></i> Exit Table View
+                        <i class="fas fa-compress mr-2 group-scope-hover:scale-110 transition-transform" aria-hidden="true"></i> <span class="lbl-full">Exit Table View</span><span class="lbl-short" aria-label="Exit Table View">Exit</span>
                     </button>
                     <div class="tooltip-container ml-2">
                         <button type="button" class="info-btn" data-tooltip-target="exitTableOnlyTooltip" aria-describedby="exitTableOnlyTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
@@ -919,6 +973,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 const th = document.createElement('th');
                 th.className = 'p-3 border-r border-gray-300 dark:border-gray-600 text-center text-gray-800 dark:text-gray-200'; // Added text color classes
                 th.textContent = name;
+                th.title = name; // full name on hover / long-press when the header is truncated
                 th.dataset.playerIndex = index; // Store player index for highlighting
                 scoreTable.querySelector('thead tr').appendChild(th);
             });
@@ -1203,10 +1258,11 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                         badge.setAttribute('role', 'img');
                         badge.setAttribute('aria-label', places[ahead]);
                         badge.textContent = medals[ahead];
-                        playerHeaderCells[index].appendChild(badge);
+                        playerHeaderCells[index].insertBefore(badge, playerHeaderCells[index].firstChild);
                     }
                 });
             }
+            if (updateScoreCharBudget() && isTableOnly()) queueFitTableOnly();
             // Add rounded bottom-right corner to the last total cell
             totalsRow.querySelector('td:last-child').classList.add('rounded-br-lg');
 
@@ -1860,6 +1916,19 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
 
         // When few rows are visible (e.g. Hide Old Rounds), stretch the rows to fill the spare
         // screen height and enlarge the text to match. With many rows the default sizing applies.
+        // Widest score/total (in characters) drives the Table Only font size so numbers always fit their column
+        let scoreCharBudget = 3.6;
+        function updateScoreCharBudget() {
+            let len = 3;
+            scoreTableBody.querySelectorAll('input[data-player-index]').forEach(i => { len = Math.max(len, i.value.length); });
+            document.querySelectorAll('#totalsRow td:not(:first-child)').forEach(td => { len = Math.max(len, td.textContent.trim().length + 2); }); // +2 for the star/triangle marker
+            const budget = Math.max(3.2, len * 0.62 + 0.7);
+            const changed = Math.abs(budget - scoreCharBudget) > 0.01;
+            scoreCharBudget = budget;
+            scoreTable.style.setProperty('--chars', budget.toFixed(2));
+            return changed;
+        }
+
         function fitTableOnly() {
             scoreTable.style.removeProperty('--row-h');
             scoreTable.style.removeProperty('--fit-font');
@@ -1876,7 +1945,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             if (natural >= avail) return; // no spare height: leave default sizing (table scrolls)
 
             const n = Math.max(gameState.playerCount, 1);
-            const widthLimit = (window.innerWidth - 76) / n / 3.6;           // keep scores inside the column
+            const widthLimit = (window.innerWidth - 74) / n / scoreCharBudget; // keep scores inside the column
             const apply = (rowH) => {
                 const font = Math.max(12, Math.min(rowH * 0.42, widthLimit, 96));
                 scoreTable.style.setProperty('--row-h', rowH + 'px');
