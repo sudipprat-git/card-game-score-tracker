@@ -911,7 +911,10 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 const td = document.createElement('td');
                 td.className = 'p-2 border-r border-gray-200 dark:border-gray-700 text-center';
                 const input = document.createElement('input');
-                input.type = 'number';
+                input.type = 'text';          // text (not number) so the caret position can be controlled
+                input.inputMode = 'numeric';  // numeric keypad on touch devices (use the +/- button for negatives)
+                input.autocomplete = 'off';
+                input.maxLength = 7;
                 input.value = scores[i] !== undefined ? scores[i] : 0;
                 input.className = 'w-full p-2 rounded-md bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 text-center text-gray-800 dark:text-gray-200'; // Added text color classes to input
                 input.dataset.playerIndex = i;
@@ -966,7 +969,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             const clickedIcon = event.currentTarget;
             const roundIndexToEdit = parseInt(clickedIcon.dataset.roundIndex);
             const targetRow = clickedIcon.closest('tr');
-            const inputsInTargetRow = targetRow.querySelectorAll('input[type="number"]');
+            const inputsInTargetRow = targetRow.querySelectorAll('input[data-player-index]');
 
             // If the clicked round is the latest round, do nothing as it's always editable
             if (roundIndexToEdit === gameState.rounds.length - 1) {
@@ -977,7 +980,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 // Another row is currently being edited, lock it first
                 const previousEditRow = scoreTableBody.querySelector(`tr[data-round-index="${currentlyEditingRoundIndex}"]`);
                 if (previousEditRow) {
-                    const inputsInPreviousRow = previousEditRow.querySelectorAll('input[type="number"]');
+                    const inputsInPreviousRow = previousEditRow.querySelectorAll('input[data-player-index]');
                     inputsInPreviousRow.forEach(input => input.disabled = true);
                     const previousEditIcon = previousEditRow.querySelector('.edit-icon');
                     if (previousEditIcon) {
@@ -1007,7 +1010,19 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             const input = event.target;
             const roundIndex = parseInt(input.closest('tr').dataset.roundIndex);
             const playerIndex = parseInt(input.dataset.playerIndex);
-            const score = parseInt(input.value) || 0; // Ensure it's a number, default to 0 if invalid
+
+            // Keep only an optional leading minus and digits
+            let cleaned = input.value.replace(/[^0-9-]/g, '');
+            cleaned = (cleaned.startsWith('-') ? '-' : '') + cleaned.replace(/-/g, '');
+            // Typing a digit in front of the auto-filled 0 replaces it (5 -> "50" -> "5"; -5 -> "-50" -> "-5")
+            if (/^-?0$/.test(input.dataset.prev || '') && /^-?[1-9]0$/.test(cleaned)) cleaned = cleaned.slice(0, -1);
+            cleaned = cleaned.replace(/^(-?)0+(?=\d)/, '$1'); // no leading zeros
+            if (cleaned !== input.value) {
+                input.value = cleaned;
+                try { input.setSelectionRange(cleaned.length, cleaned.length); } catch (e) { /* ignore */ }
+            }
+            input.dataset.prev = cleaned;
+            const score = parseInt(cleaned, 10) || 0; // Ensure it's a number, default to 0 if invalid
 
             if (!gameState.rounds[roundIndex]) {
                 gameState.rounds[roundIndex] = new Array(gameState.playerCount).fill(0);
@@ -1031,7 +1046,13 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             const playerHeader = scoreTable.querySelector(`thead th[data-player-index="${playerIndex}"]`);
 
             input.classList.add('highlight-input');
-            setTimeout(() => { try { input.select(); } catch (e) { /* ignore */ } }, 0);
+            input.dataset.prev = input.value;
+            setTimeout(() => {
+                try {
+                    if (input.value === '0') input.setSelectionRange(0, 0); // caret before the default 0
+                    else input.select();
+                } catch (e) { /* ignore */ }
+            }, 0);
             if (playerHeader) {
                 playerHeader.classList.add('highlight-player-header');
             }
@@ -1043,6 +1064,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             const playerHeader = scoreTable.querySelector(`thead th[data-player-index="${playerIndex}"]`);
 
             input.classList.remove('highlight-input');
+            if (input.value === '' || input.value === '-') input.value = '0';
             if (playerHeader) {
                 playerHeader.classList.remove('highlight-player-header');
             }
@@ -1325,7 +1347,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
                 const previousLastRoundIndex = gameState.rounds.length - 1;
                 const previousLastRoundRow = scoreTableBody.querySelector(`tr[data-round-index="${previousLastRoundIndex}"]`);
                 if (previousLastRoundRow) {
-                    const inputsInPreviousLastRow = previousLastRoundRow.querySelectorAll('input[type="number"]');
+                    const inputsInPreviousLastRow = previousLastRoundRow.querySelectorAll('input[data-player-index]');
                     inputsInPreviousLastRow.forEach(input => input.disabled = true); // Lock inputs
                     const previousLastRoundEditIcon = previousLastRoundRow.querySelector('.edit-icon');
                     if (previousLastRoundEditIcon) {
@@ -1349,13 +1371,7 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             scoreTableBody.closest('.table-container').scrollTop = scoreTableBody.closest('.table-container').scrollHeight;
             // Jump straight into the new round's first score box
             const newRoundInput = scoreTableBody.querySelector(`tr[data-round-index="${gameState.rounds.length - 1}"] input`);
-            if (isTableOnly() && isTouchDevice()) {
-                // Opening the keyboard would drop fullscreen; tapping Add Round is a user gesture,
-                // so use it to (re-)enter fullscreen. Tap a score box when you want to type.
-                requestNativeFullscreen();
-            } else if (newRoundInput) {
-                newRoundInput.focus({ preventScroll: true });
-            }
+            if (newRoundInput) newRoundInput.focus({ preventScroll: true });
         });
 
         editPlayerNamesBtn.addEventListener('click', () => {
