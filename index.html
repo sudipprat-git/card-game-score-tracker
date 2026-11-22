@@ -1014,8 +1014,6 @@ body.table-only #bottomControls > .primary-row { flex-basis: auto; }
             // Keep only an optional leading minus and digits
             let cleaned = input.value.replace(/[^0-9-]/g, '');
             cleaned = (cleaned.startsWith('-') ? '-' : '') + cleaned.replace(/-/g, '');
-            // Typing a digit in front of the auto-filled 0 replaces it (5 -> "50" -> "5"; -5 -> "-50" -> "-5")
-            if (/^-?0$/.test(input.dataset.prev || '') && /^-?[1-9]0$/.test(cleaned)) cleaned = cleaned.slice(0, -1);
             cleaned = cleaned.replace(/^(-?)0+(?=\d)/, '$1'); // no leading zeros
             if (cleaned !== input.value) {
                 input.value = cleaned;
