@@ -698,7 +698,7 @@ body.table-only #bottomControls > .table-only-exit { order: 3; }
                     </button>
                     <div class="tooltip-container ml-2">
                         <button type="button" class="info-btn" data-tooltip-target="hideShowRoundsTooltip" aria-describedby="hideShowRoundsTooltip" aria-label="Show help for this button"><i class="fas fa-info-circle text-gray-600 dark:text-gray-400 cursor-pointer text-xl" aria-hidden="true"></i></button>
-                        <span class="tooltip-text" id="hideShowRoundsTooltip">Toggle visibility of old rounds (show last 3).</span>
+                        <span class="tooltip-text" id="hideShowRoundsTooltip">Toggle visibility of old rounds (show last 5).</span>
                     </div>
                 </div>
 
@@ -1602,6 +1602,7 @@ body.table-only #bottomControls > .table-only-exit { order: 3; }
             );
         });
 
+        const VISIBLE_ROUNDS_WHEN_HIDDEN = 5; // number of most recent rounds kept visible by 'Hide Old Rounds'
         let roundsHidden = false; // State variable to track if rounds are hidden
 
         function applyHideShowRoundsState() {
@@ -1609,12 +1610,12 @@ body.table-only #bottomControls > .table-only-exit { order: 3; }
             const numRounds = allRoundRows.length;
 
             if (roundsHidden) {
-                // Hide all except the last 3
+                // Hide all except the most recent rounds
                 allRoundRows.forEach((row, index) => {
-                    if (index < numRounds - 3) {
+                    if (index < numRounds - VISIBLE_ROUNDS_WHEN_HIDDEN) {
                         row.classList.add('hidden');
                     } else {
-                        row.classList.remove('hidden'); // Ensure last 3 are visible
+                        row.classList.remove('hidden'); // Ensure the most recent rounds are visible
                     }
                 });
                 hideShowRoundsText.textContent = 'Show All Rounds';
@@ -1625,7 +1626,7 @@ body.table-only #bottomControls > .table-only-exit { order: 3; }
                 allRoundRows.forEach(row => row.classList.remove('hidden'));
                 hideShowRoundsText.textContent = 'Hide Old Rounds';
                 hideShowRoundsBtn.querySelector('i').className = 'fas fa-eye-slash mr-2 group-scope-hover:scale-110 transition-transform';
-                hideShowRoundsTooltip.textContent = 'Toggle visibility of old rounds (show last 3).';
+                hideShowRoundsTooltip.textContent = `Toggle visibility of old rounds (show last ${VISIBLE_ROUNDS_WHEN_HIDDEN}).`;
             }
         }
 
